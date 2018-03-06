@@ -1,0 +1,72 @@
+#Example using MySQL
+web::include [file dirname [web::config script]]/gamesys/databasefunctions.ws3 msg
+
+#TODO.. WEB INTERFACE!
+package require mysqltcl
+set lba [mysql::connect -host localhost -user lifebeyond -password ApocalYps3 -db lifebeyondapocalypse]
+
+#Skills
+DatabaseExec "CREATE TABLE Skills(Class VARCHAR(250), Skill VARCHAR(250), SkillDescription TEXT, xp INT, level INT, SkillRequired VARCHAR(250))"
+proc AddSkill {Class Skill SkillDescription xp {level 0} {SkillRequired None}} {
+	DatabaseExec "INSERT INTO Skills  VALUES ('$Class','$Skill','$SkillDescription','$xp','$level','$SkillRequired')"
+}
+#Mercenary
+AddSkill Mercenary "Combat tactics" "+15% accuracy to all hand to hand attack items"  100  
+AddSkill Mercenary "Blade Sharpener" "+15% accuracy to all bladed items" 150 1 "Combat tactics" 
+AddSkill Mercenary "Axe handling" "+15% accuracy with an axe" 150 2  "Blade Sharpener" 
+AddSkill Mercenary "Basic firearms training" "+20% accuracy on all firearms" 150
+AddSkill Mercenary "Pistol training" "+20% accuracy" 200 1 "Basic firearms training"
+AddSkill Mercenary "Advanced Pistol Training" "+15% accuracy" 150 2 "Pistol training"
+AddSkill Mercenary "Shotgun training" "+20% accuracy" 200 1 "Basic firearms training"
+AddSkill Mercenary "Advanced Shotgun Training" "+15% accuracy" 150 2 "Shotgun training"
+
+#[Technician]  
+AddSkill Technician Recycler "You are able to recycle things, find fuel in cars/busses and fill a can with it. Junkyard gives +1-2% per item. Various items also have +1%" 150
+AddSkill Technician Construction "Repair buildings and barricade them correctly" 150
+AddSkill Technician "Electrical equipment"  "Repairing/using: radio transmitter, generator, antenna station" 200
+AddSkill Technician "Trap and Bomb building" "You can build traps and bombs, very usefull when there are lots of zombies outside. You can also see them and disarm them." 200
+AddSkill Technician "Misc Clothing" "Repairing and creating clothing" 170
+
+
+#[Medic] 
+AddSkill Medic Healing "Heals extra 5HP per FAK" 100
+AddSkill Medic "First Aid" "FirstAid Kit making" 130 1 Healing
+AddSkill Medic Antidote "You can make antidotes for infections" 180 1 Healing
+AddSkill Medic "Lab Experiments" "Allows you to make lab liquids out of chemicals " 100
+AddSkill Medic DNA "Being able and detect zombies easier Name&Profile" 180 1 "Lab Experiments"
+AddSkill Medic "Certified DNA Medic" "This helps you in creating revival syringe, note, this can only be created in a Powered Laboratory or Hospital." 150 2 DNA
+AddSkill Medic Radiations "Able to decontaminate people/places" 200 
+AddSkill Medic  Diagnosis "Detect user HP and infections to be able to heal them." 100
+
+#[Survivor] 
+AddSkill Survivor Looting "25% Better chance when searching for something (Chance DOES not add, but gets multiplied)"	120
+AddSkill Survivor Stealth "You can silently run from one building to another even if it is baricaded(without getting in the street)" 200
+AddSkill Survivor Dexterity "+50 max energy" 130 1 Stealth
+AddSkill Survivor "Harsh Survival" "+50 health and better -1DMG for firearms" 150	
+AddSkill Survivor Ambush "first 3 attacks: +30% accuracy +50% dmg (only hth knife/axe/kantana)" 150 1 "Harsh Survival"
+AddSkill Survivor Avenger "If any heavily wounded(>50%HP) or fresh dead survivors are in room, +20% accuracy, +30% dmg on zombies" 170 2 Ambush
+AddSkill Survivor "Imunity System" "radiation effects halven, infections get cured when using first aid kit + infections take -1hp per 5 energy" 200
+
+#[Zombies] 
+
+AddSkill Zombie "Life Memory" "Brain parts function again (entering buildings is easier and using guns/weapons is possible though you get only 20% accuracy)" 200
+AddSkill Zombie Ransack  "Zombie is able to damage the interior of abandoned buildings, making them harder to search until they are repaired." 150 1 "Life Memory"
+AddSkill Zombie "Undead senses" "Using 1 energy instead of 2 energy for movement and basic stuff" 150 1 "Life Memory"
+AddSkill Zombie "Flesh Scent" "You feel infected survivors(ones becoming a zombie if they die) and know if a zone is under radiation." 130 2 "Undead senses"
+AddSkill Zombie	"Blood Trail" "Sees hp of users and detects wounded survivors up to 5x5 blocks(under 50% hp)." 150 2 "Undead senses"
+AddSkill Zombie	"Tongue scrabble" {Zombies can communicate with eachother in zombian language, it\'s not possible to understand it in human language.} 200 1 "Life Memory"
+AddSkill Zombie	"Leader" "All other zombies that are in that zone have 50% chance to protect you when hit + 25% chance to *try* to strike back at the one who attacked you. Also, of course only applies to non-zombies..." 250 2 "Tongue scrabble"
+AddSkill Zombie	 "Vigour Mortis" "+10% accuracy for hand to hand combat" 130
+AddSkill Zombie "Neck Bite" "+15% accuracy when biting" 150 1 "Vigour Mortis"
+AddSkill Zombie "Sharpened teeth" "+1 damage to bite" 150 2 "Neck Bite"
+AddSkill Zombie "Claws Grip" "+15% accuracy when trying to hit something" 170 1 "Vigour Mortis"
+AddSkill Zombie "Iron Fingers" "+1 damage when hitting" 150 2 "Claws Grip"
+AddSkill Zombie BloodShed "Every bite regenerates hp with the ammount you have bitten." 150 1 "Vigour Mortis"
+AddSkill Zombie "Death Infection" {After biting the human gets infected: -1hp per 2 energy, when he dies he becomes a zombie if he didn\'t use an antidote.} 150 2 "BloodShed"
+AddSkill Zombie  "Rotting Corpse" {Zombie\'s DNA tests and name/profile is harder to detect -25%.  Need to be in Laboratory to be Revived with a syringe} 100
+AddSkill Zombie Sunburst "No more daylight damage (usually you get +1dmg per 4 energy used outside in daylight)" 140 1 "Rotting Corpse"
+AddSkill Zombie "DNA Mutation" "+50 Max health, harder to get scanned/lab tests -25%"  200 1 "Rotting Corpse"
+AddSkill Zombie	Irradiate "Irradiating 3 radiation where passed (radiation does not increase beyond) DRAWBACK: 7% of getting 1 dmg" 230 2 "DNA Mutation"
+AddSkill Zombie "Basic Instinct" "+1 attack & 10% accuracy to biting & hitting"  150
+
+web::put "all skills added successfully!"

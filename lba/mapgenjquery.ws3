@@ -1,0 +1,44 @@
+
+	#Preselect everything in advance  for jquery here	BUT don't forget to select the   Buildings.id, too!
+	#Set everything for JQUERY so we generate the table at the browser
+	if {0} {
+		global jsettings jbuildings
+		set jsettings "{	'playerx' : '$LostPlayer(x)',		'playery' : '$LostPlayer(y)',		'townx': '$townInfo(x)'	}"
+		set jbuildings "{"
+		#append jbuildings 'type' : '$type',
+		#append jbuildings 'status' : '$status',
+		foreach {id type status} $buildings {
+			append jbuildings "'$id' : {"
+			append jbuildings '$type' : '$status',
+			append jbuildings "}" ,
+		}
+		append jbuildings "}"
+	}
+
+		/*map generation at browser side same same as SSI
+		* Set all statuses to buildings including currentlocation.. control later if user has mobile phone (using gps)
+		
+		
+		//js vars
+		var x  = 1; var y = 1;
+		myHtml = '<div>'
+		$.each(buildings, function(id,values) {
+			$.each(values, function(type,status) {
+				if ((mysettings.playerx == x) && (mysettings.playery == y)) {
+					myHtml += '<td title="' + x +',' + y + ' - ' + type  + ' - ' + status  +'" x='+ x + ' y=' + y +' class="currentLocation"></td>'
+				} else {
+					if (status != "unknown") {
+						var locationClass = status
+					} else { var locationClass = ""; }
+					myHtml += '<td title="' + x +',' + y + ' - ' + type  + ' - ' + status  +'" x='+ x + ' y=' + y +' class="' + locationClass +'"></td>'
+				}
+				x++;
+				if (x>mysettings.townx) {
+					y++; x = 1
+					myHtml += '</tr><tr>'
+				}
+			 })
+		})
+		myHtml += "</div>"
+		$('#map').html(function () { return myHtml })
+		*/

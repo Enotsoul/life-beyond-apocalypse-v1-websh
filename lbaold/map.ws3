@@ -1,0 +1,261 @@
+try {	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+
+#############
+#Misc Procedures
+#############
+proc enterBuilding {} {
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set buildingState [web::formvar enter]
+	#Handle Barricades & entering a building..
+	#If zombie, can't enter barricaded buildings!
+	array set Building [DatabaseFetchArray "select type,name,y,x,status,barricades,damage from Buildings where (x='$LostPlayer(x)' and y='$LostPlayer(y)') and Buildings.Town='$LostPlayer(town)'"]
+	if {[VerifyEnergy $LostPlayer(energy) 1]} { incr LostPlayer(energy) -1 }
+	if {$LostPlayer(inbuilding) == 0} { 
+		if {$LostPlayer(status) == "Zombie"} {
+		#TODO control if zombie has memory of life... he can open doors!
+			if {$Building(barricades) > 0} {
+				append errors "You hit the door repeatedly trying to enter the building.. You cannot open the door"
+			} else { set LostPlayer(inbuilding) 1 }
+		} else {
+			if {$Building(barricades) > 21} { 
+				append errors "You tried to enter the building but it's too heavily barricaded.. Try to smash the barricades?" 
+			} elseif {$Building(barricades)>=13 &&  $Building(barricades) <=21} {
+				set LostPlayer(inbuilding) 1; incr LostPlayer(energy) -1
+			} else { set LostPlayer(inbuilding) 1 }
+		}	
+	} else {
+		set LostPlayer(inbuilding) 0
+	}
+	if {[string length $errors] ==  0} {
+		if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+		set LostPlayer(lastaction) [unixtime]
+		DatabaseExec "UPDATE LostPlayers SET inbuilding='$LostPlayer(inbuilding)', energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastaction)',health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+		#Save things we might have changed
+		GlobalVar::carray set LostPlayer [array get LostPlayer]
+	}
+}
+#Still needs modifying
+proc DragCorpses {} {
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set dragOutside [web::formvar dragOutside]
+	#Use the same ammount of energy even if building is barricaded... Don't make it too complex!
+	set theDead [DatabaseQuery "select LostPlayers.Username from Buildings,LostPlayers where LostPlayers.Status='Dead' and (Buildings.x=LostPlayers.x and Buildings.y=LostPlayers.y) and (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and (Buildings.Town='$LostPlayer(town)' and Buildings.Town=LostPlayers.town) and LostPlayers.inbuilding=1 AND NOT LostPlayers.username='$LostPlayer(username)')"]
+	if {$theDead == ""} { append errors "There seems to be no body to drag... outside" }
+	if {[VerifyEnergy $LostPlayer(energy) 3]} { incr LostPlayer(energy) -3 }
+	
+	if {[string length $errors] ==  0} {
+		set LostPlayer(lastAction) [unixtime]
+		if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+		DatabaseExec "UPDATE LostPlayers SET inbuilding=0 where username='[lindex $theDead 0]'" 
+		DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastAction)', exp=exp+2,health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+		DisplayMap { addLabel success "You've dragged one corpse outside." }
+		GlobalVar::carray set LostPlayer [array get LostPlayer]
+	} else { DisplayMap }
+}
+proc Barricade {} { 
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	#TODO control if there are any zombies inside, if so don't barricade!
+	
+	set skill [DatabaseQuery "select Skill from PlayerSkills where username='$LostPlayer(username)' and Skill='Construction'"]
+	if {$skill != "Construction"} { append errors "You can't barricade a building if you don't have the Construction skill!" }
+
+	if {[VerifyEnergy $LostPlayer(energy) 1]} {
+		incr LostPlayer(energy) -1
+	 	array set Building [DatabaseFetchArray "select barricades,damage from Buildings WHERE (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.Town='$LostPlayer(town)')"]
+		if {$Building(barricades) <= 30 &&  $Building(damage) >= 20  && $LostPlayer(inbuilding) == 1} {
+			set items {bookcase cabinet chest sideboard chair couch sofa desk table "small bed" hi-fi piano television toaster microwave mop vacuum "ironing board"}
+			set item [lindex $items [rnd 0 [expr [llength $items]-1]]]
+			
+			set successMsg "After searching a while you use some junk to barricade the building." ;# [boldSpan $item]
+			set LostPlayer(lastAction) [unixtime]
+			set barricadeChance [rnd 1 100]
+			
+			if {$Building(barricades) <=5} { set levelChance 90 }
+			if {$Building(barricades) >=6 && $Building(barricades) <=12} { set levelChance 80 }
+			if {$Building(barricades) >=13 && $Building(barricades) <=21} { set levelChance 70 ; append successMsg " Any further barricading might not allow survivors to get in!" }
+			if {$Building(barricades) >=22 && $Building(barricades) <=30} { set levelChance 60 }			
+			if {$barricadeChance > $levelChance} { append errors "You tried to barricade the building with a(n) $item  but failed." } else { incr LostPlayer(exp) 1 }
+			
+		} else { append errors "The building is either fully barricaded or in ruins. You can't barricade it." }
+		if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+	}
+	
+	if {[string length $errors] ==  0} {
+		DatabaseExec "UPDATE Buildings SET barricades=barricades+1 where (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.Town='$LostPlayer(town)')"
+		DisplayMap { addLabel success $successMsg }
+		GlobalVar::carray set LostPlayer [array get LostPlayer]
+	} else { DisplayMap }
+	DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastAction)', exp='$LostPlayer(exp)',health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+} 
+proc RepairBuilding {} {
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	#TODO control if user has construction skill
+	
+	set skill [DatabaseQuery "select Skill from PlayerSkills where username='$LostPlayer(username)' and Skill='Construction'"]
+	if {$skill != "Construction"} { append errors "You can't repair a building if you don't have the Construction skill!" }
+
+	if {[VerifyEnergy $LostPlayer(energy) 2]} {
+		incr LostPlayer(energy) -1
+	 	array set Building [DatabaseFetchArray "select barricades,damage from Buildings WHERE (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.Town='$LostPlayer(town)')"]
+		if {$Building(damage) < 70} {
+			#Do some different things... make it more random
+			set repairChance [rnd 1 100]
+			if {$repairChance == 33} {
+				
+			} elseif {$repairChance <  50} { 
+				append errors "You repaired the building a bit but it didn't help a thing"
+			} else {
+				incr LostPlayer(exp) 1 
+			}
+		} else { append errors "The building is already fully repaired.." }
+		set LostPlayer(lastAction) [unixtime]
+		if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+	}
+	
+	if {[string length $errors] ==  0} {
+		DatabaseExec "UPDATE Buildings SET damage=damage+1 where (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.Town='$LostPlayer(town)')"
+		DisplayMap { addLabel success "You've repaired the building." }
+		#GlobalVar::carray set LostPlayer [array get LostPlayer]
+	} else { DisplayMap }
+	DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastAction)', exp=$LostPlayer(exp),health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+
+}
+proc SwitchDoor {} {
+	global errors
+	set opendoor [web:post opendoor]
+	set closedoor [web:post closedoor]
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	
+	if {[VerifyEnergy $LostPlayer(energy) 1]} {
+		incr LostPlayer(energy) -1
+	 	array set Building [DatabaseFetchArray "select barricades,damage from Buildings WHERE (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.Town='$LostPlayer(town)')"]
+
+		if {$Building(barricades) == 0 && $closedoor != ""} {
+			set door 1 ; set doorStatus "closed"
+		} elseif {$Building(barricades) == 1 && $opendoor != ""} { 
+			set door 0 ; set doorStatus "opened"
+		} else { append errors "The doors are barricaded, you can't open them!<br/>" }
+		if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+	}
+	if {[string length $errors] ==  0} {
+		set LostPlayer(lastAction) [unixtime]
+		GlobalVar::carray set LostPlayer [array get LostPlayer]
+		DatabaseExec "UPDATE Buildings SET barricades='$door' where (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.Town='$LostPlayer(town)')"
+		DisplayMap { addLabel success "You've $doorStatus the door." }
+	} else { DisplayMap }
+	DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastAction)', health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+	
+}
+proc StandUp {} {
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	if {[VerifyEnergy $LostPlayer(energy) 50]} {
+		#|| $LostPlayer(health) != 0
+		#if {$LostPlayer(status) != "Dead"} 
+		if {$LostPlayer(status) != "Dead" || $LostPlayer(health) != 0)} { 
+			append errors "You're not dead..." 
+		} else {
+		#TODO if used zombie revival syringe, make him human
+			if {$LostPlayer(revived)>0} {
+				set message "With a great headache, buzz in your ears and unclear visions flashing before your eyes. You stand up from the ground. You woke up from the dead. [boldSpan {Thank God you're alive and not a zombie}]!"	
+				set LostPlayer(status) Alive
+				incr LostPlayer(revived) -1
+			} else {
+				set message "You stand up without being able to think clearly, everything seems unreal. [boldSpan {You are now a Zombie}]!"
+				set LostPlayer(status) Zombie
+			}
+			
+			incr LostPlayer(energy) -50
+			set LostPlayer(health) 70
+		} 
+	}
+	if {[string length $errors] ==  0} {
+		set LostPlayer(lastAction) [unixtime]
+		DatabaseExec "UPDATE LostPlayers SET status='$LostPlayer(status)',energy='$LostPlayer(energy)',health='$LostPlayer(health)',revived='$LostPlayer(revived)',infected=0 WHERE username='$LostPlayer(username)'"
+
+		GlobalVar::carray set LostPlayer [array get LostPlayer]
+		DisplayMap { addLabel success "$message" }
+	} else { DisplayMap }
+}
+#############
+#Dispatching commands
+#############
+web::command default {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		MapMovement
+		SaveSession
+	}
+}
+web::command move {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		set movex [web::param movex]
+		set movey [web::param movey]
+		MapMovement $movex $movey
+		SaveSession
+	} 
+}
+web::command enterBuilding {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		enterBuilding
+		DisplayMap
+		SaveSession
+	} 
+}
+web::command DragCorpses {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		DragCorpses
+		SaveSession
+	} 
+}
+
+web::command Barricade {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		Barricade
+		SaveSession
+	} 
+}
+
+web::command RepairBuilding {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		RepairBuilding
+		SaveSession
+	} 
+}
+
+web::command SwitchDoor {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		SwitchDoor
+		SaveSession
+	} 
+}
+web::command StandUp {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		StandUp
+		SaveSession
+	} 
+}
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+
+} on error {bigError} { web::put "Some errors occured: $bigError"}
+

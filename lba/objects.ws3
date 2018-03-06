@@ -1,0 +1,84 @@
+#Objects
+
+generateClass LostPlayer userID username password language email exp  maxxp level created lastAction regip
+encumbrance  health maxhealth warnlvl energy maxenergy waterlvl foodlvl radiation  clan energyuse x y townID inbuilding status class
+deathcount killcount infected revived activationCode activated
+
+proc generateClass {name args} {
+	foreach var $args {
+		lappend vars _$var
+	}
+	append returnVar "
+oo::class create $name {
+	constructor {$vars} {"
+	unset vars			
+foreach var $args {
+		lappend vars $var
+		append constrVars "		set $var \$_${var}\n"
+		append getMethods "
+	method get[string totitle $var] {} {
+		my variable $var
+		return \$$var 
+	}"
+		append setMethods "
+	method set[string totitle $var] {newValue} {
+		my variable $var
+		set $var \$newValue
+	}"
+} 
+append returnVar "
+		my variable $vars
+$constrVars	}"
+
+append returnVar "
+	#Getters $getMethods
+	
+	#Setters $setMethods
+"
+	append returnVar "}"
+	return $returnVar	
+}
+
+#CRUD(create, read, update, delete) operations
+#the variable name to be updated OR * for everything
+method update {vars {whereValues ""}} {
+	if {$vars == "*"} {
+		
+	} else {
+		foreach var $vars {
+			append setters "$var='[my get[string to title $var]]',"
+		}
+	}
+	if {$whereValues == ""} {
+		my variable classId
+		set where "${classId}='[my get[string to title $classId]]'"
+	} else {
+		foreach value $whereValues {
+			append where "$value='[my get[string to title $value]]' AND"
+		}
+	}
+	DatabaseExec "UPDATE [self class] SET $setters WHERE $where"
+}
+#Reselects itself(if not already initialised)
+method select {} {
+	 
+}
+#Inserts itself
+method insert {} {
+	set vars [lremove [info object vars [self object]] classId]
+	
+	foreach var $vars  {
+		append insertList "${var},"
+		append values "'${$var}',"
+	}
+	
+	set insertList [string trimright $insertList ","]
+	set values [string trimright $values ","]
+	
+	DatabaseExec "INSERT INTO [self class] ($insertList)  VALUES ($values)"
+}
+#Deletes itself..
+method delete {} {
+	my variable classId
+	DatabaseExec "DELETE FROM  [self class] ${classId}='[my get[string to title $classId]]'"
+}

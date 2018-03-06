@@ -1,0 +1,45 @@
+Start of file=-=-=-=
+Get Param
+=-=-=-=
+ApocalYpsE : paypalComplete
+=-=-=-=
+Form var(POST)
+=-=-=-=
+address_zip : 95131
+first_name : John
+payer_email : buyer@paypalsandbox.com
+address_country : United States
+charset : windows-1252
+shipping : 3.04
+custom : xyz123
+address_street : 123, any street
+payer_status : verified
+last_name : Smith
+mc_gross : 12.34
+tax : 2.02
+residence_country : US
+address_state : CA
+test_ipn : 1
+address_name : John Smith
+mc_fee : 0.44
+receiver_id : TESTSELLERID1
+payment_status : Completed
+address_status : confirmed
+mc_currency : USD
+txn_type : web_accept
+address_country_code : US
+payment_date : 00:29:54 Mar 04, 2011 PST
+receiver_email : seller@paypalsandbox.com
+business : seller@paypalsandbox.com
+verify_sign : AFcWxV21C7fd0v3bYYYRCpSSRl31AeQYr9UGkPhAfq-h.KWnzQezH0WW
+mc_gross_1 : 9.34
+payer_id : TESTBUYERID01
+notify_version : 2.1
+txn_id : 5434829
+address_city : San Jose
+quantity : 1
+item_number : AK-1234
+item_name : something
+payment_type : instant
+=-=-=-=
+End:)

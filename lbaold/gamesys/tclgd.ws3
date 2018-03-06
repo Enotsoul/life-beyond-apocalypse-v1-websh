@@ -1,0 +1,25 @@
+	package require tclgd
+	set font /usr/share/fonts/truetype/freefont/FreeSans.ttf
+	set width 300 ; set height 23
+	set img [GD create lol $width $height]
+	
+	set background [$img allocate_color 255 255 255] ; #background color
+
+	#Lines
+	set rl [rnd 0 200] ; set bl [rnd 0 200] ; set gl [rnd 0 200]
+	set lineColor [$img allocate_color 100 200 220]
+	for {set i 0} {$i<25} {incr i} {
+		set x1 [rnd 0 $width] ; set x2 [rnd 0 $width] ; set y1 [rnd 0 $height]  ;set y2 [rnd 0 $height]
+		$img line  $x1 $y1 $x2 $y2 $lineColor 
+	}
+	#Text
+	set r [rnd 0 200] ; set b [rnd 0 200] ; set g [rnd 0 200]
+	#set textColor [$img allocate_color $r $b $g]
+	set textColor [$img allocate_color 0 0 0]
+	set text "text multifunctional"
+		$img text $textColor $font 25 0 [expr {round($width/2 - ([string length $text]*25*0.55)/2)} ]  20 $text
+	set file [open /home/lostone/Programming/test.jpg w+]
+	fconfigure $file -translation binary
+	puts $file [$img jpeg_data 90]
+	close $file
+	

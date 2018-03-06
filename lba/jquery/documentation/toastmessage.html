@@ -1,0 +1,741 @@
+
+    
+
+  
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+        <title>Do you wanna have some toasts ? - GitHub</title>
+    <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="GitHub" />
+    <link rel="fluid-icon" href="https://github.com/fluidicon.png" title="GitHub" />
+
+    <link href="https://assets0.github.com/stylesheets/bundle_common.css?594c3ba479ae702f0f0215dba898d5fb809fc253" media="screen" rel="stylesheet" type="text/css" />
+<link href="https://assets3.github.com/stylesheets/bundle_github.css?594c3ba479ae702f0f0215dba898d5fb809fc253" media="screen" rel="stylesheet" type="text/css" />
+
+    <script type="text/javascript">
+      if (typeof console == "undefined" || typeof console.log == "undefined")
+        console = { log: function() {} }
+    </script>
+    <script type="text/javascript" charset="utf-8">
+      var GitHub = {}
+      var github_user = null
+      
+    </script>
+    <script src="https://assets2.github.com/javascripts/jquery/jquery-1.4.2.min.js?594c3ba479ae702f0f0215dba898d5fb809fc253" type="text/javascript"></script>
+    <script src="https://assets2.github.com/javascripts/bundle_common.js?594c3ba479ae702f0f0215dba898d5fb809fc253" type="text/javascript"></script>
+<script src="https://assets3.github.com/javascripts/bundle_github.js?594c3ba479ae702f0f0215dba898d5fb809fc253" type="text/javascript"></script>
+
+
+        <script type="text/javascript" charset="utf-8">
+      GitHub.spy({
+        repo: "akquinet/jquery-toastmessage-plugin"
+      })
+    </script>
+
+    
+  <link href="https://github.com/akquinet/jquery-toastmessage-plugin/commits/master.atom" rel="alternate" title="Recent Commits to jquery-toastmessage-plugin:master" type="application/atom+xml" />
+  <script src="https://assets0.github.com/javascripts/bundle_wiki.js?594c3ba479ae702f0f0215dba898d5fb809fc253" type="text/javascript"></script>
+
+  <script src="/javascripts/other/MathJax/MathJax.js" type="text/javascript">
+    if (window.location.protocol == "https:") {
+      MathJax.OutputJax.fontDir = "https://" + document.location.host + "/assets/MathJax/fonts"
+    } else {
+      MathJax.OutputJax.fontDir = "http://" + document.location.host + "/assets/MathJax/fonts"
+    }
+    MathJax.Hub.Config({
+      jax: ["input/TeX", "output/HTML-CSS"]
+    })
+  </script>
+
+        <meta name="description" content="A JQuery plugin to 'toast' messages" />
+    <script type="text/javascript">
+      GitHub.nameWithOwner = GitHub.nameWithOwner || "akquinet/jquery-toastmessage-plugin";
+      GitHub.currentRef = 'master';
+      GitHub.commitSHA = "c3818b3da4fc443dac106e5c16bd2bcd77ca3fa3";
+      GitHub.currentPath = '';
+      GitHub.masterBranch = "master";
+
+      
+    </script>
+  
+
+        <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-3769691-2']);
+      _gaq.push(['_setDomainName', 'none']);
+      _gaq.push(['_trackPageview']);
+      (function() {
+        var ga = document.createElement('script');
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        ga.setAttribute('async', 'true');
+        document.documentElement.firstChild.appendChild(ga);
+      })();
+    </script>
+
+    
+  </head>
+
+  
+
+  <body class="logged_out ">
+    
+
+    
+
+    
+
+    
+
+    
+
+    <div class="subnavd" id="main">
+      <div id="header" class="true">
+        
+          <a class="logo boring" href="https://github.com">
+            <img src="/images/modules/header/logov3.png?changed" class="default" alt="github" />
+            <!--[if (gt IE 8)|!(IE)]><!-->
+            <img src="/images/modules/header/logov3-hover.png" class="hover" alt="github" />
+            <!--<![endif]-->
+          </a>
+        
+        
+        <div class="topsearch">
+  
+    <ul class="nav logged_out">
+      <li class="pricing"><a href="/plans">Pricing and Signup</a></li>
+      <li class="explore"><a href="/explore">Explore GitHub</a></li>
+      <li class="features"><a href="/features">Features</a></li>
+      <li class="blog"><a href="/blog">Blog</a></li>
+      <li class="login"><a href="/login?return_to=https://github.com/akquinet/jquery-toastmessage-plugin/wiki">Login</a></li>
+    </ul>
+  
+</div>
+
+      </div>
+
+      
+      
+        
+    <div class="site">
+      <div class="pagehead repohead vis-public   emptyrepohead shortdetails">
+
+      
+
+      <div class="title-actions-bar">
+        <h1>
+          <a href="/akquinet">akquinet</a> / <strong><a href="https://github.com/akquinet/jquery-toastmessage-plugin">jquery-toastmessage-plugin</a></strong>
+          
+          
+        </h1>
+
+        
+    <ul class="actions">
+      
+
+      
+        <li class="for-owner" style="display:none"><a href="https://github.com/akquinet/jquery-toastmessage-plugin/admin" class="minibutton btn-admin "><span><span class="icon"></span>Admin</span></a></li>
+        <li>
+          <a href="/akquinet/jquery-toastmessage-plugin/toggle_watch" class="minibutton btn-watch " id="watch_button" onclick="var f = document.createElement('form'); f.style.display = 'none'; this.parentNode.appendChild(f); f.method = 'POST'; f.action = this.href;var s = document.createElement('input'); s.setAttribute('type', 'hidden'); s.setAttribute('name', 'authenticity_token'); s.setAttribute('value', '7d788e29b9a6cf3b01b1c559c6caf80bc2753d39'); f.appendChild(s);f.submit();return false;" style="display:none"><span><span class="icon"></span>Watch</span></a>
+          <a href="/akquinet/jquery-toastmessage-plugin/toggle_watch" class="minibutton btn-watch " id="unwatch_button" onclick="var f = document.createElement('form'); f.style.display = 'none'; this.parentNode.appendChild(f); f.method = 'POST'; f.action = this.href;var s = document.createElement('input'); s.setAttribute('type', 'hidden'); s.setAttribute('name', 'authenticity_token'); s.setAttribute('value', '7d788e29b9a6cf3b01b1c559c6caf80bc2753d39'); f.appendChild(s);f.submit();return false;" style="display:none"><span><span class="icon"></span>Unwatch</span></a>
+        </li>
+        
+          
+            <li class="for-notforked" style="display:none"><a href="/akquinet/jquery-toastmessage-plugin/fork" class="minibutton btn-fork " id="fork_button" onclick="var f = document.createElement('form'); f.style.display = 'none'; this.parentNode.appendChild(f); f.method = 'POST'; f.action = this.href;var s = document.createElement('input'); s.setAttribute('type', 'hidden'); s.setAttribute('name', 'authenticity_token'); s.setAttribute('value', '7d788e29b9a6cf3b01b1c559c6caf80bc2753d39'); f.appendChild(s);f.submit();return false;"><span><span class="icon"></span>Fork</span></a></li>
+            <li class="for-hasfork" style="display:none"><a href="#" class="minibutton btn-fork " id="your_fork_button"><span><span class="icon"></span>Your Fork</span></a></li>
+          
+
+          
+        
+      
+      
+      <li class="repostats">
+        <ul class="repo-stats">
+          <li class="watchers"><a href="/akquinet/jquery-toastmessage-plugin/watchers" title="Watchers" class="tooltipped downwards">64</a></li>
+          <li class="forks"><a href="/akquinet/jquery-toastmessage-plugin/network" title="Forks" class="tooltipped downwards">3</a></li>
+        </ul>
+      </li>
+    </ul>
+
+      </div>
+
+        
+  <ul class="tabs">
+    <li><a href="https://github.com/akquinet/jquery-toastmessage-plugin" highlight="repo_source">Source</a></li>
+    <li><a href="https://github.com/akquinet/jquery-toastmessage-plugin/commits/master" highlight="repo_commits">Commits</a></li>
+    <li><a href="/akquinet/jquery-toastmessage-plugin/network" highlight="repo_network">Network</a></li>
+    <li><a href="/akquinet/jquery-toastmessage-plugin/pulls" highlight="repo_pulls">Pull Requests (0)</a></li>
+
+    
+
+    
+      
+      <li><a href="/akquinet/jquery-toastmessage-plugin/issues" highlight="issues">Issues (2)</a></li>
+    
+
+                <li><a href="/akquinet/jquery-toastmessage-plugin/wiki" class="selected" highlight="repo_wiki">Wiki (1)</a></li>
+        
+    <li><a href="/akquinet/jquery-toastmessage-plugin/graphs" highlight="repo_graphs">Graphs</a></li>
+
+    <li class="contextswitch nochoices">
+      <span class="toggle leftwards" >
+        <em>Branch:</em>
+        <code>master</code>
+      </span>
+    </li>
+  </ul>
+
+  <div style="display:none" id="pl-description"><p><em class="placeholder">click here to add a description</em></p></div>
+  <div style="display:none" id="pl-homepage"><p><em class="placeholder">click here to add a homepage</em></p></div>
+
+  
+  
+  
+  
+  
+  
+  <div class="subnav-bar">
+  <ul>
+    <li><a href="/akquinet/jquery-toastmessage-plugin/wiki" class="selected">Home</a></li>
+    <li><a href="/akquinet/jquery-toastmessage-plugin/wiki/_pages">Pages</a></li>
+    <li><a href="/akquinet/jquery-toastmessage-plugin/wiki/_history">Wiki History</a></li>
+    <li><a href="/akquinet/jquery-toastmessage-plugin/wiki/_access">Git Access</a></li>
+  </ul>
+</div>
+
+
+
+        
+
+        
+
+      </div><!-- /.pagehead -->
+
+      
+
+<div id="repos">
+    
+
+
+<script type="text/javascript">
+  GitHub.downloadRepo = '/akquinet/jquery-toastmessage-plugin/archives/master'
+  GitHub.revType = "master"
+
+  GitHub.controllerName = "wiki"
+  GitHub.actionName     = "index"
+  GitHub.currentAction  = "wiki#index"
+
+  
+
+  
+</script>
+
+
+
+
+
+
+</div>
+<div class="flash-messages"></div>
+
+
+<div id="wiki-wrapper" class="page">
+<div id="head">
+  <h1>Do you wanna have some toasts ?</h1>
+  <ul class="actions">
+      <li class="gollum-minibutton"><a href="/akquinet/jquery-toastmessage-plugin/wiki/Home/_history"
+       class="action-page-history">
+       Page History
+     </a></li>
+  </ul>
+</div>
+<div id="wiki-content">
+  <div class="wrap">
+  <div id="wiki-body">
+    <div id="template">
+      <h1>Do you wanna have some toasts ?</h1>
+
+<p>jquery-toastmessage-plugin is a JQuery plugin which provides android-like notification messages. The toasted messages arriving on the screen in a seamless and natural way. They may or may not disrupt the user and they are still informative. It's a quite nice way to report info or error to the user.</p>
+
+<p>The plugin is entirely customizable. So you can change the positioning, the required user action, the style and so on.</p>
+
+<h1>Getting the plugin</h1>
+
+<p>The plugin is packaged inside a Jar file (Java Archive). So just download the jar file and unzip it:</p>
+
+<pre><code>jquery.toastmessage.js        &lt;-- the plugin
+css/jquery.toastmessage.css   &lt;-- the css file
+images/error.png              &lt;-- image
+images/close.gif              &lt;-- image
+images/notice.png             &lt;-- image
+images/success.png            &lt;-- image
+images/warning.png            &lt;-- image
+META-INF/MANIFEST.MF    
+META-INF/LICENSE        
+META-INF/NOTICE
+</code></pre>
+
+<p>You can also directly grab the files from the latest TAG from github <a href="https://github.com/akquinet/jquery-toastmessage-plugin/tree/jquery-toastmessage-plugin-0.2.0%5D">https://github.com/akquinet/jquery-toastmessage-plugin/tree/jquery-toastmessage-plugin-0.2.0</a>.</p>
+
+<p>To get the plugin to work, you need the plugin javascript file, the css file and a couple of images.</p>
+
+<h1>Types of toast messages</h1>
+
+<p>You have 4 different toast types you can use. Each type comes with its own icon and colored border. The types are:</p>
+
+<ul>
+<li>notice</li>
+<li>success</li>
+<li>warning</li>
+<li>error</li>
+</ul><p>The following methods will display a toast message:</p>
+
+<pre><code>$().toastmessage('showNoticeToast', 'some message here');
+$().toastmessage('showSuccessToast', "some message here");
+$().toastmessage('showWarningToast', "some message here");
+$().toastmessage('showErrorToast', "some message here");
+</code></pre>
+
+<p>These toast messages are shown on the upper right side of your browser and will stay for some time before they will fade out automatically.</p>
+
+<p>To remove a special toast you can do that with</p>
+
+<pre><code>$().toastmessage('removeToast', toastObject);
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code>// reconfiguring the toasts as sticky
+$().toastmessage({sticky : true});
+
+// saving the newly created toast into a variable
+var myToast =  $().toastmessage('showNoticeToast', 'some message here');
+
+// removing the toast
+$().toastmessage('removeToast', myToast);
+</code></pre>
+
+<h1>Configuration of your toasts</h1>
+
+<p>Sometime the predefined settings are not the good ones. You can alter the configuration to your special use case.</p>
+
+<pre><code>// user configuration of all toastmessages to come:
+$().toastmessage({
+    text     : 'Hello World',
+    sticky   : true,
+    position : 'top-right',
+    type     : 'success',
+    close    : function () {console.log("toast is closed ...");}
+});
+</code></pre>
+
+<p>These are the provided configuration properties with its default values:</p>
+
+<pre><code>inEffectDuration:  600,   // in effect duration in miliseconds
+stayTime:         3000,   // time in miliseconds before the item has to disappear
+text:               '',   // content of the item
+sticky:          false,   // should the toast item sticky or not?
+type:         'notice',   // notice, warning, error, success
+position:  'top-right',   // top-left, top-center, top-right, middle-left, middle-center, middle-right
+                          // Position of the toast container holding different toast.
+                          // Position can be set only once at the very first call,
+                          // changing the position after the first call does nothing
+closeText:         '',    // text which will be shown as close button,
+                          // set to '' when you want to introduce an image via css
+close:            null    // callback function when the toastmessage is closed
+</code></pre>
+
+<p>Besides global configuration for all of your toasts. There is also a more general toast method provided where you can
+modify the special toast on your hand.</p>
+
+<pre><code>$().toastmessage('showToast', {
+    text     : 'Some information for you ...',
+    sticky   : true,
+    type     : 'notice'
+});
+</code></pre>
+
+<p>This will show a toastmessage of type 'success' which is sticky and will not fade away by itself. All other already showed</p>
+
+<p>To see some more examples please have a look into the Tests in src/test/javascript/ToastmessageTest.js</p>
+
+<p>For further style configuration please see corresponding css file: src/main/resources/css/jquery-toastmessage.css</p>
+
+<h1>Disclaimer</h1>
+
+<p>This plugin is based on the jquery-notice (http://sandbox.timbenniks.com/projects/jquery-notice/)
+but is enhanced in several ways:</p>
+
+<ul>
+<li>configurable positioning</li>
+<li>convenience methods for different message types</li>
+<li>callback functionality when closing the toast</li>
+<li>included some nice free icons</li>
+</ul><h1>License</h1>
+
+<p>jquery-toastmessage-plugin is licensed under the Apache License 2.0. The project is founded by <a href="http://www.akquinet.de/en">akquinet A.G.</a></p>
+    </div>
+  </div>
+  
+  
+  </div>
+
+</div>
+<div id="gollum-footer">
+  <p id="last-edit">
+        Last edited by dbremer-tonn, <abbr class="relatize" title="2011-02-10 05:58:48">Thu Feb 10 05:58:48 -0800 2011</abbr>
+      </p>
+  <p id="delete-link">
+    <a href="/akquinet/jquery-toastmessage-plugin/wiki" onclick="if (confirm('Are you sure you want to delete this page?')) { var f = document.createElement('form'); f.style.display = 'none'; this.parentNode.appendChild(f); f.method = 'POST'; f.action = this.href;var m = document.createElement('input'); m.setAttribute('type', 'hidden'); m.setAttribute('name', '_method'); m.setAttribute('value', 'delete'); f.appendChild(m);var s = document.createElement('input'); s.setAttribute('type', 'hidden'); s.setAttribute('name', 'authenticity_token'); s.setAttribute('value', '7d788e29b9a6cf3b01b1c559c6caf80bc2753d39'); f.appendChild(s);f.submit(); };return false;"><span>Delete this Page</span></a>
+  </p>
+</div>
+</div>
+
+
+    </div>
+  
+      
+    </div>
+
+    <div id="footer" class="clearfix">
+      <div class="site">
+        <div class="sponsor">
+          <a href="http://www.rackspace.com" class="logo">
+            <img alt="Dedicated Server" src="https://assets3.github.com/images/modules/footer/rackspace_logo.png?v2?594c3ba479ae702f0f0215dba898d5fb809fc253" />
+          </a>
+          Powered by the <a href="http://www.rackspace.com ">Dedicated
+          Servers</a> and<br/> <a href="http://www.rackspacecloud.com">Cloud
+          Computing</a> of Rackspace Hosting<span>&reg;</span>
+        </div>
+
+        <ul class="links">
+          <li class="blog"><a href="https://github.com/blog">Blog</a></li>
+          <li><a href="http://support.github.com">Support</a></li>
+          <li><a href="https://github.com/training">Training</a></li>
+          <li><a href="http://jobs.github.com">Job Board</a></li>
+          <li><a href="http://shop.github.com">Shop</a></li>
+          <li><a href="https://github.com/contact">Contact</a></li>
+          <li><a href="http://develop.github.com">API</a></li>
+          <li><a href="http://status.github.com">Status</a></li>
+        </ul>
+        <ul class="sosueme">
+          <li class="main">&copy; 2011 <span id="_rrt" title="0.09492s from fe4.rs.github.com">GitHub</span> Inc. All rights reserved.</li>
+          <li><a href="/site/terms">Terms of Service</a></li>
+          <li><a href="/site/privacy">Privacy</a></li>
+          <li><a href="https://github.com/security">Security</a></li>
+        </ul>
+      </div>
+    </div><!-- /#footer -->
+
+    
+      
+      
+        <!-- current locale:  -->
+        <div class="locales">
+          <div class="site">
+
+            <ul class="choices clearfix limited-locales">
+              <li><span class="current">English</span></li>
+              
+                  <li><a rel="nofollow" href="?locale=de">Deutsch</a></li>
+              
+                  <li><a rel="nofollow" href="?locale=fr">Français</a></li>
+              
+                  <li><a rel="nofollow" href="?locale=ja">日本語</a></li>
+              
+                  <li><a rel="nofollow" href="?locale=pt-BR">Português (BR)</a></li>
+              
+                  <li><a rel="nofollow" href="?locale=ru">Русский</a></li>
+              
+                  <li><a rel="nofollow" href="?locale=zh">中文</a></li>
+              
+              <li class="all"><a href="#" class="minibutton btn-forward js-all-locales"><span><span class="icon"></span>See all available languages</span></a></li>
+            </ul>
+
+            <div class="all-locales clearfix">
+              <h3>Your current locale selection: <strong>English</strong>. Choose another?</h3>
+              
+              
+                <ul class="choices">
+                  
+                      <li><a rel="nofollow" href="?locale=en">English</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=af">Afrikaans</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=ca">Català</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=cs">Čeština</a></li>
+                  
+                </ul>
+              
+                <ul class="choices">
+                  
+                      <li><a rel="nofollow" href="?locale=de">Deutsch</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=es">Español</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=fr">Français</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=hr">Hrvatski</a></li>
+                  
+                </ul>
+              
+                <ul class="choices">
+                  
+                      <li><a rel="nofollow" href="?locale=id">Indonesia</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=it">Italiano</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=ja">日本語</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=nl">Nederlands</a></li>
+                  
+                </ul>
+              
+                <ul class="choices">
+                  
+                      <li><a rel="nofollow" href="?locale=no">Norsk</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=pl">Polski</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=pt-BR">Português (BR)</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=ru">Русский</a></li>
+                  
+                </ul>
+              
+                <ul class="choices">
+                  
+                      <li><a rel="nofollow" href="?locale=sr">Српски</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=sv">Svenska</a></li>
+                  
+                      <li><a rel="nofollow" href="?locale=zh">中文</a></li>
+                  
+                </ul>
+              
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+      
+    
+
+    <script>window._auth_token = "7d788e29b9a6cf3b01b1c559c6caf80bc2753d39"</script>
+    
+
+<div id="keyboard_shortcuts_pane" style="display:none">
+  <h2>Keyboard Shortcuts <small><a href="#" class="js-see-all-keyboard-shortcuts">(see all)</a></small></h2>
+
+  <div class="columns threecols">
+    <div class="column first">
+      <h3>Site wide shortcuts</h3>
+      <dl class="keyboard-mappings">
+        <dt>s</dt>
+        <dd>Focus site search</dd>
+      </dl>
+      <dl class="keyboard-mappings">
+        <dt>?</dt>
+        <dd>Bring up this help dialog</dd>
+      </dl>
+    </div><!-- /.column.first -->
+
+    <div class="column middle" style='display:none'>
+      <h3>Commit list</h3>
+      <dl class="keyboard-mappings">
+        <dt>j</dt>
+        <dd>Move selected down</dd>
+      </dl>
+      <dl class="keyboard-mappings">
+        <dt>k</dt>
+        <dd>Move selected up</dd>
+      </dl>
+      <dl class="keyboard-mappings">
+        <dt>t</dt>
+        <dd>Open tree</dd>
+      </dl>
+      <dl class="keyboard-mappings">
+        <dt>p</dt>
+        <dd>Open parent</dd>
+      </dl>
+      <dl class="keyboard-mappings">
+        <dt>c <em>or</em> o <em>or</em> enter</dt>
+        <dd>Open commit</dd>
+      </dl>
+    </div><!-- /.column.first -->
+
+    <div class="column last" style='display:none'>
+      <h3>Pull request list</h3>
+      <dl class="keyboard-mappings">
+        <dt>j</dt>
+        <dd>Move selected down</dd>
+      </dl>
+      <dl class="keyboard-mappings">
+        <dt>k</dt>
+        <dd>Move selected up</dd>
+      </dl>
+      <dl class="keyboard-mappings">
+        <dt>o <em>or</em> enter</dt>
+        <dd>Open issue</dd>
+      </dl>
+    </div><!-- /.columns.last -->
+
+  </div><!-- /.columns.equacols -->
+
+  <div style='display:none'>
+    <div class="rule"></div>
+
+    <h3>Issues</h3>
+
+    <div class="columns threecols">
+      <div class="column first">
+        <dl class="keyboard-mappings">
+          <dt>j</dt>
+          <dd>Move selected down</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>k</dt>
+          <dd>Move selected up</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>x</dt>
+          <dd>Toggle select target</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>o <em>or</em> enter</dt>
+          <dd>Open issue</dd>
+        </dl>
+      </div><!-- /.column.first -->
+      <div class="column middle">
+        <dl class="keyboard-mappings">
+          <dt>I</dt>
+          <dd>Mark selected as read</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>U</dt>
+          <dd>Mark selected as unread</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>e</dt>
+          <dd>Close selected</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>y</dt>
+          <dd>Remove selected from view</dd>
+        </dl>
+      </div><!-- /.column.middle -->
+      <div class="column last">
+        <dl class="keyboard-mappings">
+          <dt>c</dt>
+          <dd>Create issue</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>l</dt>
+          <dd>Create label</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>i</dt>
+          <dd>Back to inbox</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>u</dt>
+          <dd>Back to issues</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>/</dt>
+          <dd>Focus issues search</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div style='display:none'>
+    <div class="rule"></div>
+
+    <h3>Network Graph</h3>
+    <div class="columns equacols">
+      <div class="column first">
+        <dl class="keyboard-mappings">
+          <dt><span class="badmono">←</span> <em>or</em> h</dt>
+          <dd>Scroll left</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt><span class="badmono">→</span> <em>or</em> l</dt>
+          <dd>Scroll right</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt><span class="badmono">↑</span> <em>or</em> k</dt>
+          <dd>Scroll up</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt><span class="badmono">↓</span> <em>or</em> j</dt>
+          <dd>Scroll down</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>t</dt>
+          <dd>Toggle visibility of head labels</dd>
+        </dl>
+      </div><!-- /.column.first -->
+      <div class="column last">
+        <dl class="keyboard-mappings">
+          <dt>shift <span class="badmono">←</span> <em>or</em> shift h</dt>
+          <dd>Scroll all the way left</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>shift <span class="badmono">→</span> <em>or</em> shift l</dt>
+          <dd>Scroll all the way right</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>shift <span class="badmono">↑</span> <em>or</em> shift k</dt>
+          <dd>Scroll all the way up</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>shift <span class="badmono">↓</span> <em>or</em> shift j</dt>
+          <dd>Scroll all the way down</dd>
+        </dl>
+      </div><!-- /.column.last -->
+    </div>
+  </div>
+
+  <div style='display:none'>
+    <div class="rule"></div>
+
+    <h3>Source Code Browsing</h3>
+    <div class="columns threecols">
+      <div class="column first">
+        <dl class="keyboard-mappings">
+          <dt>t</dt>
+          <dd>Activates the file finder</dd>
+        </dl>
+        <dl class="keyboard-mappings">
+          <dt>l</dt>
+          <dd>Jump to line</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+</div>
+    
+
+    <!--[if IE 8]>
+    <script type="text/javascript" charset="utf-8">
+      $(document.body).addClass("ie8")
+    </script>
+    <![endif]-->
+
+    <!--[if IE 7]>
+    <script type="text/javascript" charset="utf-8">
+      $(document.body).addClass("ie7")
+    </script>
+    <![endif]-->
+
+    
+    <script type='text/javascript'></script>
+    
+  </body>
+</html>
+

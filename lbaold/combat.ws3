@@ -1,0 +1,249 @@
+try {
+	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+
+#Use functions?
+proc AttackUser {player} {
+	global errors
+	upvar weapon weapon
+	upvar LostPlayer LostPlayer 
+	upvar attTimes attTimes
+	set skills [DatabaseQuery "select Skill from PlayerSkills where username='$LostPlayer(username)'"]
+	
+	#get the adversary info
+	if {$player == "Zombie"} {
+		array set Adversary [DatabaseFetchArray "select LostPlayers.username,LostPlayers.health,LostPlayers.status,LostPlayers.infected from Buildings,LostPlayers where LostPlayers.Status!='Dead' and LostPlayers.status='Zombie' and (Buildings.x=LostPlayers.x and Buildings.y=LostPlayers.y) and (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and (Buildings.Town='$LostPlayer(town)' and Buildings.Town=LostPlayers.town) and LostPlayers.inbuilding='$LostPlayer(inbuilding)' AND NOT LostPlayers.username='$LostPlayer(username)') limit 1"]
+	} else  {
+		array set Adversary [DatabaseFetchArray "select LostPlayers.username,LostPlayers.health,LostPlayers.status,LostPlayers.infected from Buildings,LostPlayers where LostPlayers.username='$player' and LostPlayers.Status!='Dead' and (Buildings.x=LostPlayers.x and Buildings.y=LostPlayers.y) and (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and (Buildings.Town='$LostPlayer(town)' and Buildings.Town=LostPlayers.town) and LostPlayers.inbuilding='$LostPlayer(inbuilding)' AND NOT LostPlayers.username='$LostPlayer(username)')"]
+	}
+	if {$Adversary(username) == ""} { append errors "No such username seems to be here!" } else {
+	#if {$Adversary(health) == ""} { append errors "The player you are trying to attack is already dead.. Let him rest in pieces..!" } 
+		#TODO message handling... know who attacked & when
+		#TODO if wearing(or having a flank jacket in inventory) give protection!
+		set totalDamage 0
+		for {set i 0} {$i < $attTimes} {incr i} {
+			set rnd [rnd 1 100 ]
+			#web::put "weapon: $weapon(Name) random luck ! $rnd" ; #debugging purpose
+			if {$rnd <= $weapon(Accuracy)} {
+				incr totalDamage $weapon(Damage)
+				incr Adversary(health) -$weapon(Damage)
+				incr LostPlayer(exp) 1
+			} { incr missed 1 }
+			if {$Adversary(health) <= 0} {
+				set Adversary(health) 0 
+				incr LostPlayer(exp) 6
+				set killedTarget 1
+			} else { set killedTarget 0 }
+		}
+		if {$totalDamage == 0} { append errors "You attacked $player $attTimes times but missed." }
+	}
+
+	if {[string length $errors] ==  0} {
+		set msg [mysql::escape "You've been attacked $attTimes time(s) by $LostPlayer(username) with a $weapon(Name) and he did $totalDamage damage."]
+		if {$killedTarget == 0} {
+			if {[string match -nocase "*BloodShed*" $skills] && $LostPlayer(status) == "Zombie" && $weapon(Name)== "Bite"} {
+				incr LostPlayer(health) $totalDamage
+				if {$LostPlayer(health)>$LostPlayer(maxhealth)} { 
+					set LostPlayer(health) $LostPlayer(maxhealth)
+					set biteText "You've fully regenerated your HP."
+				 } else { set biteText "After eating some flesh, you regenerate $totalDamage HP." }
+			} else { set biteText "" }
+			if {[string match -nocase "*Death Infection*" $skills] && $LostPlayer(status) == "Zombie" &&  $weapon(Name)== "Bite"} {
+				append msg "You have been bitten by $LostPlayer(username) and are now infected. Each move will decrease 1hp."
+				set Adversary(infected) 1
+				append biteText " You've bitten $Adversary(username) and infected him. He will now die slowly."
+			}
+
+			DatabaseExec "UPDATE LostPlayers SET health='$Adversary(health)',infected='$Adversary(infected)' WHERE username='$Adversary(username)'"
+			addLabel success "You attacked <span class=\"bold\"> $player </span>  $attTimes times doing  <span class=\"bold\"> $totalDamage </span> damage. Health drops to <span class=\"bold\"> $Adversary(health) </span> hp. $biteText"
+		} else {
+			#Declare the player dead and set infection to 0
+			DatabaseExec "UPDATE LostPlayers SET health='$Adversary(health)', status='Dead',infected='0',deathcount=deathcount+1 WHERE username='$Adversary(username)'"
+			addLabel success "You attacked <span class=\"bold\"> $player </span>  $attTimes times doing  <span class=\"bold\"> $totalDamage </span> damage and <span class=\"bold\">killed</span> him."
+			append msg " You have been killed."
+			incr LostPlayer(killcount) 1
+		}
+		set time [unixtime]
+		DatabaseExec "INSERT INTO Messages (fromUser,toUser,msg,msgTime,readMsg) VALUES('SYSTEM','$Adversary(username)','$msg','$time',0)"
+	} 
+	switch -- $weapon(Name) {
+		Pistol { DatabaseExec "UPDATE Items SET subitem=subitem-$attTimes WHERE id='$weapon(id)'" }
+		Shotgun { DatabaseExec "UPDATE Items SET subitem=subitem-$attTimes WHERE id='$weapon(id)'" }
+		Chainsaw { DatabaseExec "UPDATE Items SET subitem=subitem-$attTimes WHERE id='$weapon(id)'" }
+		Teaser { DatabaseExec "UPDATE Items SET subitem=subitem-$attTimes WHERE id='$weapon(id)'" }
+	}
+}
+proc AttackMiscItems {what} {
+	global errors
+	upvar weapon weapon
+	upvar LostPlayer LostPlayer
+	upvar attTimes attTimes
+	array set Item [GlobalVar::carray get Building]
+	
+	#web::put $Item(barricades)
+	#web::put $Item(damage)
+	#TODO  other things that you can attack.. handling:P
+	switch $what {
+		barricades { 
+			set thing barricades ; set it "they're" ; set name barricades
+			if {$weapon(Name) != "Crowbar"} { set weapon(Accuracy) [expr {$weapon(Accuracy)/2}] }
+		}
+		building { 
+			#TODO control if he actually has the ransack skill.. (stop scriptkiddies)
+			set thing damage ; set it "it's" ; set name building
+		 }
+	}
+
+	set totalDamage 0 ; set status ""
+	#Always do 1 damage, no matter which item is used
+	if {$Item($thing) > 0} {
+		for {set i 0} {$i < $attTimes} {incr i} {
+			set rnd [rnd 1 100 ]
+			if {$rnd <= $weapon(Accuracy)} {
+				incr totalDamage 1
+				incr Item($thing) -1
+				#incr totalDamage $weapon(Damage)
+				#incr Item($thing) -[expr int($weapon(Damage))]
+				if {$LostPlayer(status) == "Zombie"} { incr LostPlayer(exp) 1 }
+			} 
+			if {$Item($thing) <= 0} {
+				set Item($thing) 0 
+				if {$LostPlayer(status) == "Zombie"} { incr LostPlayer(exp) 3 }
+				set destroyedTarget 1
+			} elseif {$Item(damage) < 20 && $what == "building"} {
+				set status ", status='ruined'" 
+				set destroyedTarget 0
+			} else { set destroyedTarget 0 }
+		}
+		
+		if {$totalDamage == 0} { append errors "You attacked the $name but $it still intact." }
+	} else { append errors "Can't you see that $name is already destroyed?" }
+		
+	if {[string length $errors] ==  0} {
+		#Switch for the thing
+		if {$destroyedTarget == 0} {
+			#addLabel success "You attacked the <span class=\"bold\"> $name </span> and <span class=\"bold\"> $totalDamage </span> damage. A part of it collapses."
+			addLabel success "You attacked the <span class=\"bold\"> $name </span>  <span class=\"bold\"> damaged  it</span>."
+		} else {
+			#Destroy the thing
+			#addLabel success "You attacked the <span class=\"bold\"> $name </span> for  <span class=\"bold\"> $totalDamage </span> damage and $it now <span class=\"bold\">destroyed</span>."
+			addLabel success "You attacked the <span class=\"bold\"> $name </span> and <span class=\"bold\">destroyed</span> it."
+			set time [unixtime]
+			set msg [mysql::escape "destroyed the $name."]
+			DatabaseExec "INSERT INTO LocalMsg (fromUser,inbuilding,town,x,y,msg,msgTime) VALUES('$LostPlayer(username)','$LostPlayer(inbuilding)','$LostPlayer(town)','$LostPlayer(x)','$LostPlayer(y)','$msg','$time')"
+		}
+		#TODO generator a new field in the buildings db? Or make a new table with items
+		DatabaseExec "UPDATE Buildings SET $thing='$Item($thing)' $status WHERE (x='$LostPlayer(x)' and y='$LostPlayer(y)') and Buildings.Town='$LostPlayer(town)'"
+	} 
+	switch -- $weapon(Name) {
+		Pistol { DatabaseExec "UPDATE Items SET subitem=subitem-$attTimes WHERE id='$weapon(id)'" }
+		Shotgun { DatabaseExec "UPDATE Items SET subitem=subitem-$attTimes WHERE id='$weapon(id)'" }
+		Chainsaw { DatabaseExec "UPDATE Items SET subitem=subitem-$attTimes WHERE id='$weapon(id)'" }
+		Teaser { DatabaseExec "UPDATE Items SET subitem=subitem-$attTimes WHERE id='$weapon(id)'" }
+	}
+}
+proc Attack {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	global errors
+	set otherPlayer [web:post adversary]
+	set Item [web:post weapon]
+	set attTimes [web:post times]
+	array set Building [GlobalVar::carray get Building]
+
+	if {[VerifyEnergy $LostPlayer(energy) $attTimes] && $otherPlayer != "" && $Item != ""} {
+				
+		#get your attacks.. switch between zombie & human state
+		if {$LostPlayer(status) == "Zombie"} {
+			array set zombieAttacks [DatabaseFetchArray "select * from ZombieAttacks where username='$LostPlayer(username)'"]
+			switch $Item {
+				Bite { array set weapon "Name Bite Damage $zombieAttacks(BiteDmg) Accuracy $zombieAttacks(BiteAcc)" }
+				Hands { array set weapon "Name Hands Damage $zombieAttacks(ClawDmg) Accuracy $zombieAttacks(ClawAcc)"}
+			}
+		} else { 
+			if {$Item != "Punch"} {
+				array set weapon [DatabaseFetchArray "SELECT Weapons.Name,Weapons.Damage,Weapons.Accuracy,Items.Subitem,Items.Break ,Items.id from Items,Weapons where Items.username='$LostPlayer(username)' and Weapons.Name=Items.item and Items.item='$Item'"]
+				if  {$weapon(Name) == ""} { append errors "You don't have that item in your inventory!" }
+			} else { 
+				array set weapon "Name Punch Damage 1 Accuracy 25"
+			}
+			array set playerAccuracy [DatabaseFetchArray "select * from PlayersAccuracy where username='$LostPlayer(username)'"]
+			#just add the extra accuracy for the weapon
+			switch -- $weapon(Name) {
+				Knife { 
+					incr weapon(Accuracy)  [expr {$playerAccuracy(Blade) +$playerAccuracy(HandToHand)}]  
+					if {$otherPlayer == "barricades"} { append errors "A knife isn't effective against barricades." }
+				}
+				Axe { incr accuracy  [expr {$playerAccuracy(Blade)+ $playerAccuracy(Axe) + $playerAccuracy(HandToHand)}] }
+				Kantana {  incr accuracy  [expr {$playerAccuracy(Blade) + $playerAccuracy(HandToHand)}] } 
+				Pistol {
+					 incr weapon(Accuracy)   $playerAccuracy(Pistol) 
+					 if {$weapon(Subitem)==0} { append errors "Your gun(pistol) isn't loaded!" } 
+					if {$weapon(Subitem)<$attTimes} { append errors "You don't have enough bullets to shoot $attTimes times. " }
+				}
+				Shotgun { 
+					incr weapon(Accuracy)  $playerAccuracy(Shotgun) 
+					if {$weapon(Subitem)==0} { append errors "Your shotgun isn't loaded!" }
+					if {$weapon(Subitem)<$attTimes} { append errors "Your shotgun only has 2 shells. " }
+				}
+				Chainsaw {
+					 append errors "Sorry, you can't use the chainsaw at this time... Actually you could but it needs to use gas:D"	
+				}
+				Teaser { 
+					append errors "You don't seem to have a valid battery.. Can't use the teaser."	
+				}
+				Newspaper { 
+					if {$otherPlayer == "barricades" || $otherPlayer == "building" } { append errors "You take out the newspaper, read the daily news from a few years ago and slap it against the building." }
+				}
+				default { incr weapon(Accuracy) $playerAccuracy(HandToHand) }
+			}
+			#Control Pistol, Shotgun, chainsaw & teaser...
+		}
+		#Set the ruined building penalty.. maybe later the dark one two..
+		if {$Building(status) == "ruined"} { set weapon(Accuracy) [expr {round($weapon(Accuracy)*0.75)}]		}
+
+		if {[string length $errors] ==  0} {
+			if {[string match "*$otherPlayer*" "building barricades"]} { 
+				AttackMiscItems $otherPlayer
+			} else { AttackUser $otherPlayer  }
+			incr LostPlayer(energy) -$attTimes ;#Do it here and not after the control
+			if {$LostPlayer(infected)==1} { incr LostPlayer(health) -$attTimes }
+		} 
+	
+		set LostPlayer(lastAction) [unixtime]
+		
+		DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastAction)', exp='$LostPlayer(exp)',killcount='$LostPlayer(killcount)',health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+	} elseif {[VerifyEnergy $LostPlayer(energy) 1]} { append errors "Something seems to be wrong... could you be trying to cheat?" }
+	
+	GlobalVar::carray set LostPlayer [array get LostPlayer]
+}
+
+#############
+#Dispatching commands
+#############
+web::command attack {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		DisplayMap { Attack }		
+		SaveSession
+	}
+}
+web::command default {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+			
+		DisplayMap
+		SaveSession
+	}
+}
+
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+
+} on error {bigError} { web::put "Some errors occured: $bigError"}

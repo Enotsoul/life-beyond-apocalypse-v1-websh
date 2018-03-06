@@ -1,0 +1,383 @@
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+
+web::command default {
+	IsAuthenticated
+	page "In game graphics"  {
+		
+		web::putx {	<img src="<? web::put [web::cmdurl moneyFlow]?>" />}
+		web::putx {	<img src="<? web::put [web::cmdurl pieChart data 77*25*55*50*33*44*60*13*15*25 label Romania*Hungary*USA*Germany*Belgium*China*Russia*Israel*Uganda*Japan]?>" />}
+	
+	} {
+		
+	}	
+	
+}
+	
+proc pieChart {} {
+
+	#
+	# PHP script made by Rasmus - http://www.peters1.dk //
+	# Tcl rewrite by LostOne
+
+	set show_label  true; #// true = show label, false = don't show label.
+	set show_percent  true; #// true = show percentage, false = don't show percentage.
+	set show_text  true; #// true = show text, false = don't show text.
+	set show_parts  false; #// true = show parts, false = don't show parts.
+	set label_form  round; #// 'square' or 'round' label.
+	set width  500;
+	set background_color FFFFFF; #// background-color of the chart...
+	set text_color  000000 ; #// text-color.
+	array set colors {  0 003366  1 CCD6E0 2 7F99B2 3 68D0A1 4 A52997 5 CC6600 6 990000 7 520000  8 76D51C 9 196826}; #// colors of the slices.
+	set resizeValue 2; # since antialising isn't working well we'll have to resize and resample the picture to get a good antialising:D
+	set shadow_height  [expr {16*$resizeValue}]; #// Height on shadown.
+	set shadow_dark  true; #// true = darker shadow, false = lighter shadow...
+
+	#// DON'T CHANGE ANYTHING BELOW THIS LINE...
+
+	set data [web:get data]
+	set label [web:get label]
+
+	if {$label == "" || $data == ""} {
+		web::putx "Can't be empty sorry!"
+	} else {
+		set height [expr {$width/2}];
+		set data [split $data *]
+		set text_length 0
+		set label [split $label *]
+
+		for {set i  0} {$i < [llength $label]} { incr i} {
+			set currentData [expr {double([lindex $data $i])/[sum $data]}]
+			set  number($i) [format %.2f%%  [expr {$currentData*100}]]  
+			
+			if {[string length [lindex $label $i]] > $text_length} { set text_length [string length [lindex $label $i]] }
+		}
+
+
+		set antal_label  [count $label]
+		set xtra_height 0
+		set xtra  [expr {10+15*$antal_label-($height+ceil($shadow_height))}]
+		if {$xtra > 0} { set xtra_height [expr {(5+15*$antal_label*$resizeValue)-($height+ceil($shadow_height))}] }
+		
+		set xtra_width  7;
+		if {$show_label} { incr xtra_width  20 }
+		if {$show_percent} { incr xtra_width  45 }
+		if {$show_text} { incr xtra_width  [expr {$text_length*12}] }
+		if ($show_parts) { set xtra_width  35 }
+
+		#Lib Gd Settings..
+		set font [file dirname [web::config script]]/gamesys/FreeSans.ttf
+
+		#Images for antialising.. when resizing:D
+		
+		set	normalWidth $width 
+		set normalHeight $height 
+		set	width [expr {$width * $resizeValue}];
+		set height [expr {$height * $resizeValue}];
+		
+		
+		#// create the larger source image
+		set img [GD create_truecolor  bigpiechart [expr {int($width+$xtra_width*$resizeValue)}]  [expr {int($height+ceil($shadow_height*$resizeValue)+$xtra_height*$resizeValue)}]]
+		#// create the real/final image
+		set destImg [GD create_truecolor  smallpiechart [expr {int($normalWidth+$xtra_width)}]  [expr {int($normalHeight+ceil($shadow_height)+$xtra_height)}]]
+	
+		set background [$img true_color 255 255 255] ; #background color
+		#set lineColor2 [$img true_color  200 200 170]
+
+		$img fill 0 0 $background
+		$destImg fill 0 0 $background
+
+		foreach colorcode [array names colors] {
+			set fill_color($colorcode) [colorHex $img  $colors($colorcode)]
+			set shadow_color($colorcode) [colorHexshadow $img  $colors($colorcode) $shadow_dark]
+		}
+		unset i
+		
+		set label_place 5;
+
+		for {set i  0} {$i < [llength $label]} { incr i} {
+			if {$label_form == "round" && $show_label  && [lindex $data $i] > 0}	{
+				#imgObj filled_elipse cx cy width height color draws a filled ellipse centered at cx, cy, of the given width, height and color. 
+				$img filled_ellipse [expr {$width+11*$resizeValue}] [expr {($label_place+5)*$resizeValue}] [expr {10*$resizeValue}]  [expr {10*$resizeValue}]    [colorHex $img $colors($i)]
+				#$img ellipse [expr {$width+11}] [expr {$label_place+5}] 10 10  [colorHex $img $text_color]
+
+			} elseif {$label_form == "square" && $show_label && [lindex $data $i] > 0} 	{
+				$img filled_rectangle [expr {$width+6*$resizeValue}] [expr {$label_place*$resizeValue}] [expr {$width+16*$resizeValue}] [expr {($label_place+10)*$resizeValue}] [colorHex $img $colors($i)]
+			 	#$img rectangle [expr {$width+6*$resizeValue}] [expr {$label_place*$resizeValue}]  [expr {$width+16*$resizeValue}] [expr {($label_place+10)*$resizeValue}] [colorHex $img $text_color]
+			}
+
+			if {[lindex $data $i] > 0}	{
+				if {$show_percent} { set label_output $number($i) }
+				if {$show_text}  { set label_output  "$label_output  [lindex $label $i]" }
+				if {$show_parts} { set label_output  "$label_output  [lindex $data $i]" }
+				
+				$img text [colorHex $img $text_color] $font [expr {10*$resizeValue}] 0 [expr {$width+25*$resizeValue}] [expr {($label_place+10)*$resizeValue}] $label_output
+				
+				set label_output ""
+			
+				incr label_place 15
+			}
+		}
+		
+		
+		set centerX [expr {round($width/2)}]
+		set centerY [expr {round($height/2)}]
+		set diameterX [expr {$width-4}]
+		set diameterY [expr {$height-4}]
+
+		set data_sum  [sum $data]
+
+		set start 270
+		set value_counter 0
+		
+		for {set i  0} {$i < [llength $data]} { incr i} {
+			incr value  [lindex $data $i]
+			set end [expr {round((double($value)/$data_sum)*360) + 270}]
+			set slice($i) "$start  $end $shadow_color($value_counter) $fill_color($value_counter)";
+			set start $end;
+			incr value_counter
+		}
+		for {set i  [expr {$centerY+$shadow_height}]} {$i > $centerY} { incr i -1} {
+			for {set j 0 } {$j < [array size slice]} { incr j } {
+				if {[lindex $slice($j) 0] != [lindex $slice($j) 1]}  {
+					#objName filled_arc cx cy width height startDegrees endDegrees color ?arc? ?chord? ?pie? ?nofill? ?edged?
+					#draws an arc centered on cx, cy, of the specified width and heigtht,
+					#starting and ending at the specified degrees, and using the specified color.
+					#Additional options can be specified and are logically or'ed together, chord, pie, nofill and/or edged.
+		#bool imagefilledarc ( resource $image , int $cx , int $cy , int $width , int $height , int $start , int $end , int $color , int $style )
+					$img filled_arc $centerX $i $diameterX $diameterY [expr {int([lindex $slice($j) 0])}] [expr {int([lindex $slice($j) 1])}] [lindex $slice($j) 2] pie
+			#		ImageFilledArc($img, $centerX, $i, $diameterX, $diameterY, $slice[$j][0], $slice[$j][1], $slice[$j][2], IMG_ARC_PIE);
+				}
+			}
+		}	
+			for {set j 0 } {$j < [array size slice]} { incr j } {
+				if {[lindex $slice($j) 0] != [lindex $slice($j) 1]}  {
+						$img filled_arc $centerX $centerY $diameterX $diameterY [lindex $slice($j) 0] [lindex $slice($j) 1] [lindex $slice($j) 3] pie	
+				}
+			}
+	}
+	
+		#// now the picture is finished, do the shrink...
+
+	#	$destImg copy_resampled $img 0 0 0 0  $normalWidth $normalHeight $width $height 
+		$destImg copy_resampled $img 0 0 0 0 [expr {int($normalWidth+$xtra_width)}] [expr {int($normalHeight+ceil($shadow_height)+$xtra_height)}] [expr {int($width+$xtra_width*$resizeValue)}]  [expr {int($height+ceil($shadow_height*$resizeValue)+$xtra_height*$resizeValue)}]
+	 # set HTTP header to "image/jpeg" instead of "text/html"
+    web::response -set Content-Type image/jpeg
+
+    # because we return a img, change to binary again
+    fconfigure [web::response] -translation binary
+
+    # output
+    web::put [$destImg jpeg_data 80]
+
+	#Destroy image
+	GD create $img 1 1
+}
+
+proc colorHex {img  HexColorString}  {
+	set R [expr {"0x[string range $HexColorString 0 1]"}]
+	set G [expr {"0x[string range $HexColorString 2 3]"}]
+	set B [expr {"0x[string range $HexColorString 4 5]"}]
+	
+	return [$img true_color  $R $G $B]
+}
+
+proc colorHexshadow {img  HexColorString mork} {
+	set R [expr {"0x[string range $HexColorString 0 1]"}]
+	set G [expr {"0x[string range $HexColorString 2 3]"}]
+	set B [expr {"0x[string range $HexColorString 4 5]"}]
+
+
+	if {$mork} {
+		expr {($R > 99) ? [incr R  -100] : [set R  0]}
+		expr {($B > 99) ? [incr B  -100] : [set B  0]}
+		expr {($G > 99) ? [incr G  -100] : [set G  0]}
+	} else 	{
+		expr {($R < 220) ? [incr R  35] : [set R  255]}
+		expr {($G < 220) ? [incr G  35] : [set G  255]}
+		expr {($B < 220) ? [incr B  35] : [set B  255]}			
+	}			
+	
+		return [$img true_color  $R $G $B]
+}
+
+
+
+
+#############
+#Of course we could use the math functions.. 
+#############
+
+proc max {nrs} {
+	return [lindex [lsort -decreasing -integer $nrs] 0]
+}
+proc min {nrs} {
+	return [lindex [lsort -increasing -integer $nrs] 0]
+}
+proc sum1 {nrs} {
+	return [expr {[join $nrs +]}]
+}
+proc sum {nrs} {
+	foreach nr $nrs {
+		incr sum $nr
+	}
+	return $sum
+}
+proc count {nrs} {
+	return [llength $nrs ]
+}
+
+proc moneyFlow {}  {
+	#set font /usr/share/fonts/truetype/freefont/FreeSans.ttf
+	set font [file dirname [web::config script]]/gamesys/FreeSans.ttf
+	set fontSize 11
+	set width 800 ; set height 450
+	set resizeImage 2
+	set normalWidth $width
+	set normalHeight $height
+	set	width [expr {$width*$resizeImage}]
+	set height [expr {$height*$resizeImage}]
+
+			
+	set img [GD create_truecolor  bigflow $width $height]
+	set destImg [GD create_truecolor  smallflow  $normalWidth $normalHeight]
+	
+	#set background [$img allocate_color 255 255 255] ; #background color
+	set background [$img true_color 255 255 255] ; #background color
+
+	#Lines
+	set lineColor [$img true_color  100 200 220]
+	set borderColor [$img true_color 0 0 0]
+	set lineColor2 [colorHex $img E7922E]
+	set text_color [colorHex $img 1B7A1A] ; #// text-color.
+	set black [colorHex $img  000000] ; #// text-color.
+		
+	#set lineColor [$img true_color  100 200 220]
+	$img fill 0 0 $background
+	$destImg fill 0 0 $background
+
+	#$img set_anti_aliased_dont_blend  $lineColor
+
+	foreach {y1 x1} "$height 0" { }
+	#set nrs "15000 25000  100000"
+	#set names "Monday Tuesday  Wensday "
+	
+	set nrs "15000 25000  100000 50000 35000 70000 67894 81050   57083 37097 90000"
+	set names "Monday Tuesday  Wensday Thursday Friday Saturday Sunday LostCorp  GigiInc. Vasile Beer"
+	
+	set max [max $nrs]
+	#Leave space for info bar
+	set x1 [expr {90*$resizeImage}]
+	set x2 $x1
+	set yspace [expr {30*$resizeImage}]
+	#Calculate the Xwidth..
+	set xwidth [expr {int(($width-$x1)/[count $nrs])}]
+	
+	incr height -$yspace
+	set yline [expr {$height - round(double($max)/$max*$height*0.95)}]
+	set lineVal [expr {$max/10}]
+	$img set_thickness  1
+	$img line  $x1 0 $x1 $height $black
+	for {set i 0} {$i<=10} { incr i } {
+		set y [expr {$height - round(double($lineVal*$i)/$max*$height*0.95)}]
+	#	objName text color font pointSize angle x y text
+		$img text $text_color $font [expr {$fontSize*$resizeImage}] 0 10 [expr {$y-3}] "[expr {$lineVal*$i}] ron"
+		$img line  0 $y $width $y $black
+	}
+	#Move the chart Up yspace
+
+	foreach  money $nrs name $names {
+
+		#set x1 [rnd 0 $width] ; set x2 [rnd 0 $width] ; set y1 [rnd 0 $height]  ;set y2 [rnd 0 $height]
+		set y2 [expr {$height - round(double($money)/$max*$height*0.95)}]
+		incr x2 $xwidth
+		set x1loc [expr {$x1+$xwidth/13}]
+		set x2loc [expr {$x2-$xwidth/13}]
+		set textLoc [expr {$x1+$xwidth/10}]
+		$img rectangle $x1loc $height $x2loc $y2 $lineColor
+		$img set_thickness  2
+		$img polygon open [list $x1loc $height $x1loc   $y2  $x2loc $y2  $x2loc $height] $borderColor
+		$img set_thickness  5
+
+		#Draw line to the middle.. of each column
+		if {$y1 > 0} {
+			$img line  [expr {round($x1-$xwidth/2.)}] $y1 [expr {round($x2-$xwidth/2.)}] $y2 $lineColor2
+		}
+
+		#Draw the text as last so it's on top of everything
+		#	objName text color font pointSize angle x y text
+		#Name text
+		$img text $text_color $font [expr {$fontSize*$resizeImage}] 0 $textLoc [expr {$height+20*$resizeImage}] $name
+		#Value text
+		$img text $text_color $font [expr {$fontSize*$resizeImage}] 0 $textLoc [expr {$y2-5}] "$money $"
+		
+		#Re-set the old type
+		set y1 $y2
+		set x1 $x2
+	}
+	
+	#REcopy the image for an antialising hack and remember to put back the yspace to the width!
+	$destImg copy_resampled $img 0 0 0 0 $normalWidth $normalHeight $width [expr {$height+$yspace}] 
+	 # set HTTP header to "image/jpeg" instead of "text/html"
+    web::response -set Content-Type image/jpeg
+
+    # because we return a img, change to binary again
+    fconfigure [web::response] -translation binary
+
+    # output
+    web::put [$destImg jpeg_data 80]
+}
+
+#Antialised
+if {0} {
+If you can't be bothered creating (or searching for) a full screen antialias function.
+You can actually cheat (well a bit of a dirty inefficient hack really!!)
+and perform a fake antialias on an image by using 'imagecopyresampled'...
+
+first create your source image twice the size of what you really want.
+
+Then use 'imagecopyresampled' to shrink it to half the size, the function
+automatically interpolates pixels to create an antialias effect!
+
+I've used this in a pie chart function and it works brilliantly,
+not as slow as I thought it might be!
+
+the rough code below should give you the idea...
+
+
+$realWidth = 500;
+$realHeight = 500;
+$srcWidth = $realWidth * 2;
+$srcHeight = $realHeight * 2;
+
+// create the larger source image
+$srcImage = imagecreatetruecolor($srcWidth,$srcHeight);
+
+// create the real/final image
+$destImage = imagecreatetruecolor($realWidth,$realHeight);
+
+// now do whatever you want to draw in the source image
+// blah....
+
+// now the picture is finished, do the shrink...
+imagecopyresampled($destImage,$srcImage,0,0,0,0,
+$realWidth,$realHeight,$srcWidth,$srcHeight);
+
+// now just do whatever you want with '$destImage' (e.g. display or output to file!)
+
+}
+#############
+#Dispatching commands
+#############
+
+web::command moneyFlow {
+	moneyFlow
+}
+web::command pieChart {
+	pieChart
+}
+
+
+#Include footer
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+
+

@@ -1,0 +1,50 @@
+# SLAVA TIE DOAMNE!!! CORRECT REDIRECT!!!
+try {
+	
+proc download {} {
+}
+web::command default {
+	##use this to download a file :D
+	set fileName Tcl.tar.gz
+	#the file location must be ABSOLUTE!
+	#set fileLocation [file dirname [web::config script]]/$fileName
+	set fileLocation /home/lostone/$fileName
+	#Send it as an attachment, including the file name, this may vary
+	web::response -set Content-Disposition "attachment; filename=$fileName"
+	#announce it's binary
+	web::response -set Content-Transfer-Encoding binary
+	#give the size...
+	web::response -set Content-Length [file size $fileLocation]
+	
+	if {0} {
+	#open  & read the file
+	set fp [open $fileLocation  r]
+	set size [file size $fileLocation]
+	set file_data [read $fp $size]
+    close $fp
+    ##send the data to the browser
+	web::put $file_data
+	}
+    
+
+
+   
+    # web::response -sendheader 0
+    # web::response  -reset
+
+	#web::response -set Cache-control private; #use this to open files directly
+
+	#Use this to REDIRECT!
+	web::response -httpresponse "HTTP/1.1 301 Moved Permanently"
+	web::response -set Location  ./redirect.ws3?cmd=thanks
+	
+	#web::response -set Connection Close
+	web::put "Gigel, tu esti?! Vrei fisieru: [web::formvar file] ?"
+    
+}
+web::command thanks {
+	web::put "thanks for downloading the file! <a href=\"[web::cmdurl -urlformat {scriptname}  default file wikistuff]\">Download again!</a>"
+}
+# command dispath
+web::dispatch
+} on error {theError} {web::put "$theError <br/><br/> $errorInfo"}

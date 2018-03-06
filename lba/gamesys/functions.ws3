@@ -1,0 +1,520 @@
+#OBF
+#####################
+#This file contains all the functions used & needed by the game
+#####################
+#Log everything
+web::logfilter add *.-debug
+catch {file mkdir [file dirname [web::config script]]/gamesys/sup3rdup3rl0gs/}
+web::logdest add *.-debug file  [file dirname [web::config script]]/gamesys/sup3rdup3rl0gs/websh.log 
+
+#Log command
+proc logCommand {msg} {
+      web::put "An error occured"
+      web::put $msg
+}
+#Set page time
+set pageTime [clock milliseconds]
+
+# @Update on  04/03/2011
+#Set the putxmarkup to <? ?> tags instead of { } 
+web::config putxmarkup  tag
+
+#Url parameter & encryption key
+web::config cmdparam ApocalYpsE
+web::cryptdkey noCool3rW4yTo
+
+#Includes the needed files & database.. Later maybe split this big file appart in more.. and load them in each page separately
+web::include [file dirname [web::config script]]/gamesys/databasefunctions.ws3 msg
+#This handles all the xhtml & styles  generation commands so we only focus on the actual programming in this file
+web::include [file dirname [web::config script]]/gamesys/xhtml.ws3 msg
+
+#The templating system.. make more & set settings in the user's page.. maybe let him make his own css?
+web::include [file dirname [web::config script]]/templates/dark.ws3 msg
+
+
+#Required packages
+package require md5
+package require xhtml
+package require tclgd
+
+#####################
+#Session Mamagement starts here
+#####################
+proc StartSession {} {
+	# Define a memory context to hold some configuration variables.
+	web::context GlobalVar
+	#sessions directory
+	GlobalVar::cset stateDirectory /tmp/websh/lba/
+
+	# Create a file counter (only create one if the current interpreter does not already have one)
+	if {![llength [info commands idGenerator]]} {
+		web::filecounter idGenerator -filename [file join [GlobalVar::cget stateDirectory] counter] -seed 0 -incr 3
+	}
+
+	# Create a file context named 'Session'. The option '-path' defines
+	# where the session contexts are stored. '-attachto' defines an
+	# URL parameter name that might contain an existing session.
+	# (This parameter name could in fact be extracted using 'web::param sid' whenever the session is initalized.)
+	web::filecontext Session -path [file join [GlobalVar::cget stateDirectory] %s] -attachto sid -idgen "idGenerator nextval"
+
+	#Make a cookie for data.. it keeps track of the session id..
+	web::cookiecontext  LifeBeyond -expires  [clock add [clock seconds] 30 minutes]
+
+	# Make sure the session state directory exists! 
+	#DO NOT REMOVE THIS OR YOU'LL GET IN TROUBLE! LET IT RECREATE EVERY TIME
+	catch {file mkdir [GlobalVar::cget stateDirectory]}
+}
+proc saveAllFields {} {
+	# Save all form fields to state context.
+	foreach field [web::formvar -names] {
+		 Session::cset $field [web::formvar $field]
+	}
+}
+#A little safety, if someone tries to remotely exploit session id's just invalidate if it's a different browser
+proc noHijack {} {
+	if {[Session::cexists HTTP_USER_AGENT]} {
+		if {[web::decryptd [Session::cget HTTP_USER_AGENT]] != [web::request HTTP_USER_AGENT]} {
+			Session::invalidate
+			LifeBeyond::invalidate
+			#web::put "Invalidate!<br/><br/>"
+			RedirectAuth
+		} 
+	} else {
+		Session::cset HTTP_USER_AGENT [web::encryptd [web::request HTTP_USER_AGENT]]
+		#web::put "Set again!<br/><br/>"
+		Session::commit
+	}
+}
+proc InitSession {} {
+	#Start the session
+	StartSession
+	#Make the cookie
+	LifeBeyond::init LifeBeyondApocalypse
+	#Don't throw an error
+	if {[catch {
+		if {[LifeBeyond::cexists sessionId]} {
+			set sessionId [LifeBeyond::cget sessionId] 
+			Session::init $sessionId	
+		} else { 
+			Session::init 
+			LifeBeyond::cset sessionId [Session::id]
+		}
+	} sessionError]} { 
+	#If the session doesn't exist anymore, invalidate the cookie(NOT THE SESSION!)
+	#and redirect to login..
+		LifeBeyond::invalidate
+		RedirectAuth
+	}
+		CorrectLang
+		LifeBeyond::commit
+}
+proc IsAuthenticated {} {
+	InitSession
+	noHijack
+	if {![Session::cexists username]} {
+		return 0
+	} else {
+		#Make the LostPlayers selection global so we don't have to reselect it every freaking time:)
+		set username [Session::cget username]
+		GlobalVar::carray set LostPlayer [DatabaseFetchArray "SELECT * from LostPlayers WHERE username='$username'"]
+		GoodAuthLang ;# give the good language
+		global errors
+		set errors ""
+		return 1
+	}
+}
+proc SaveSession {} { Session::commit }
+proc RedirectAuth {} { 
+	Redirect ./[newUrl auth.ws3 expired]
+	#web::putx {<meta http-equiv="refresh" content="0;url=./{web::putx newUrl auth.ws3 expired] }">}
+}
+proc RedirectRestricted {} {	
+	Redirect ./[newUrl auth.ws3 RestrictedAccess]
+	#web::putx {<meta http-equiv="refresh" content="0;url=./{web::putx newUrl auth.ws3 RestrictedAccess] }">}
+}
+if {0} {
+#for firefox..
+web::response -set Access-Control-Allow-Origin "*"
+web::response -set Access-Control-Allow-Methods "POST, GET, OPTIONS"
+web::response -set Access-Control-Max-Age = 1000
+web::response -set Access-Control-Allow-Headers = "*"
+}
+proc Redirect {page} {
+	#VERY IMPORTANT NOT TO SEND THE HEADER
+	web::response -sendheader 0
+	#The actual response
+	web::response -httpresponse "HTTP/1.1 301 Moved Permanently"
+	#the actual page
+	web::response -set Location  $page
+	#header is ok to send
+	web::response -sendheader 1
+	#put something so that the header gets sent
+	web::put ""	
+}
+#End session management
+#####################
+#General commands
+#####################
+#Overwrite the incr command se we can use fractions..
+proc eincr {varName {amount 1}} {
+	upvar 1 $varName var
+	if {![info exists var]} {set var 0}
+	set var [expr {$var+$amount}]
+}
+ 
+proc getFormVar {var} {
+	return [web::put [web::formvar $var]]
+}
+proc rnd {min max} {
+	expr {int(($max - $min + 1) * rand()) + $min}
+}
+proc unixtime { } { return [clock seconds] }
+proc givetime { time } { return [clock format $time -format {%Y-%m-%d %H:%M:%S}] }
+
+# Time difference function from http://wiki.tcl.tk/948
+# Usage: timeDiff: Seconds elapsed
+proc timeDiff {argSeconds} {
+	incr argSeconds 1
+	#set _llength 0; set _return "";
+	 set steps "
+		zero
+		year	[expr {86400 * 365}]
+		month	[expr {86400 * 30}]
+		week	[expr {86400 * 7}]
+		day		86400
+		hour	3600
+		minute	60
+		second	1
+		"
+		 
+	 set i 1
+	 set _templist {zero}
+	 while {$i < [llength $steps]} {
+		 set unit [lindex $steps $i]
+		 incr i
+		 set number [lindex $steps $i]
+		 incr i
+		 set argSeconds [::tcl::mathfunc::int $argSeconds]
+		 if  {$number > $argSeconds} {continue}
+		 set nunit [expr {$argSeconds / $number}]
+		 set argSeconds [::tcl::mathfunc::fmod $argSeconds $number]
+		 if {$nunit > 1} {set unit ${unit}s}
+		 lappend _templist "$nunit $unit"
+		 incr _llength
+	 }
+
+	for {set i $_llength} {$i > 0} {incr i -1} {
+		if {$i == $_llength} {
+			set _return "[lindex $_templist $i]"
+		} elseif {$i == [expr {$_llength -1}]}        {
+			set _return "[lindex $_templist $i] and $_return"
+		} else {
+			set _return "[lindex $_templist $i], $_return"
+		}
+	}
+
+	return $_return
+ }
+proc web:post {var} {
+	return [::mysql::escape [web::formvar $var]] 
+}
+proc web:get {var} {
+	return [::mysql::escape [web::param $var]]
+}
+###############################
+# Captcha image test generation
+###############################
+proc humanTest {} {
+	set type [rnd 1 3]
+	set nr1 [rnd 0 13]
+	set nr2 [rnd 0 13]
+	switch $type {
+		1 { set operation "+" }
+		2 { set operation "-" }
+		3 { set operation "*" }
+	}
+	#set expr "<span style=\"background:lightgrey;color:green;\">$nr1 <span>$operation</span> $nr2</span>"
+	set expr "$nr1$operation$nr2"	
+	set answer [expr "$nr1 $operation $nr2"]
+	Session::cset humanTestAnswer $answer
+	Session::commit
+	return $expr
+}
+
+web::command CaptchaCalc {
+	IsAuthenticated
+	Captcha calc
+}
+
+web::command Captcha {
+	IsAuthenticated
+	Captcha text
+}
+proc Captcha {type}  {
+	package require tclgd
+	#set font /usr/share/fonts/truetype/freefont/FreeSans.ttf
+	set font [file dirname [web::config script]]/gamesys/FreeSans.ttf
+	set width 120 ; set height 40
+	set img [GD create lol $width $height]
+	
+	set background [$img allocate_color 255 255 255] ; #background color
+
+	#Lines
+	set rl [rnd 0 200] ; set bl [rnd 0 200] ; set gl [rnd 0 200]
+	set lineColor [$img allocate_color  100 200 220]
+	for {set i 0} {$i<25} {incr i} {
+		#set rl [rnd 0 200] ; set bl [rnd 0 200] ; set gl [rnd 0 200]
+		#set lineColor [$img allocate_color $rl $bl $gl];# 100 200 220]
+
+		set x1 [rnd 0 $width] ; set x2 [rnd 0 $width] ; set y1 [rnd 0 $height]  ;set y2 [rnd 0 $height]
+		$img line  $x1 $y1 $x2 $y2 $lineColor 
+	}
+	#Text
+	set r [rnd 0 200] ; set b [rnd 0 200] ; set g [rnd 0 200]
+	#set textColor [$img allocate_color $r $b $g]
+	set textColor [$img allocate_color 0 0 0]
+	if {$type == "calc"} {	set text [humanTest] } else { 
+		set text [generateCode 5 3] 
+		Session::cset humanTestAnswer $text
+		Session::commit
+	 }
+	$img text $textColor $font 20 0 [expr {round($width*0.4 - ([string length $text]*20*0.60)/2)} ]   [expr {round($height/2 + 20/2)} ]   $text
+	
+	 # set HTTP header to "image/jpeg" instead of "text/html"
+    web::response -set Content-Type image/jpeg
+
+    # because we return a img, change to binary again
+    fconfigure [web::response] -translation binary
+
+    # output
+    web::put [$img jpeg_data 90]
+}
+
+#####################
+#This helps you when making links for another file
+proc newUrl {script {command default} args} { 
+	web::cmdurlcfg -scriptname $script
+			#-urlformat [list scriptname querystring]
+	set url [web::cmdurl  $command $args]
+	web::cmdurlcfg -scriptname "" 
+	return $url
+}
+proc newFullUrl {script {command default} args} { 
+	web::cmdurlcfg -scriptname $script
+			#-urlformat [list scriptname querystring]
+	set url [web::cmdurl -urlformat [list scheme host port pathinfo script querystring]  $command $args]
+	web::cmdurlcfg -scriptname "" 
+	return $url
+}
+#This generates the full url for the current page
+#For the online version, strip the port.. 
+proc fullUrl {{command default} args} {
+	set url [web::cmdurl -urlformat [list scheme host port pathinfo script querystring]  $command $args]
+	return $url	
+}
+proc newUrl2 {script {command default} args} { 
+	web::cmdurlcfg -scriptname $script
+	web::config cmdurltimestamp 0
+	set url [web::cmdurl $command $args]
+	web::cmdurlcfg -scriptname "" 
+	web::config cmdurltimestamp 1
+	return $url
+}
+proc ItemImage {item} {
+	regsub -all {\s} $item "" itemName
+	return "<p style=\"margin: 0 auto;\"><img style=\"width: auto; height:auto;\" src=\"./images/items/[string tolower ${itemName}].png\"/></p>"
+	#return "./images/items/${itemName}.png"
+}
+#####################
+# Verifications
+#####################
+proc VerifyAlive {health} {
+	if {$health == 0} { 
+		return 0
+	} else { return 1 }
+}
+proc VerifyEnergy {energy needed} {
+	global errors
+	#if {$energy < $needed} { return 0 } else { return 1 }
+	if {$energy < $needed} { 
+	append errors  [Lost:lang youHaveNoEnergy]
+	return 0
+	 } else { return 1 }
+}
+proc VerifyLevel {level} {
+	#TODO IN DISTANT FUTURE: The globalvar namespace is a little slow, better use it as a global variable?;;) 
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	if {![Session::cexists username]} {
+		return 0
+	} else {
+		if {$LostPlayer(level) >= $level} {
+			return 1
+		} else { return 0 }
+	}
+}
+
+proc GetLevel {level} {
+	switch -- $level  {
+		0 { return [colorSpan Banned red] }		
+		1 { return [boldSpan "Player"] }
+		2 { return [boldSpan "Player"] }	
+		3 { return [colorSpan Premium #CC5CDE]	}		
+		4 { return [colorSpan Bureaucrat #5CCEDE] }
+		5 { return [colorSpan Counciler #5E81DB] } 
+		6 { return [colorSpan Minister #EFA80E] } 
+		7 { return [colorSpan Dictator #5CDE60] } 
+	}	
+}
+proc GetLevel {level} {
+	switch -- $level  {
+		0 { return [colorSpan Banned red] }		
+		1 { return [boldSpan "Player"] }
+		2 { return [boldSpan "Trusted player"] }	
+		3 { return [colorSpan Premium #CC5CDE]	}		
+		4 { return [colorSpan Moderator #5CCEDE] }
+		5 { return [colorSpan Admin #5E81DB] } 
+		6 { return [colorSpan Super-Admin #EFA80E] } 
+		7 { return [colorSpan Owner #5CDE60] } 
+	}	
+}
+#############
+#Mail and text
+#############
+proc generateCode {length {type 1}} {
+	if {$type == 1} {
+		set string "azertyuiopqsdfghjklmwxcvbnAZERTYUIOPQSDFGHJKLMWXCVBN0123456789"
+	} elseif {$type == 2} { set string AZERTYUIOPQSDFGHJKLMWXCVBN0123456789 
+	} elseif {$type == 3} { set string azertyuiopqsdfghjklmwxcvbn0123456789 } else {  set string 0123456789 }
+	set code ""
+	set stringlength [expr {[string length $string]-1}]
+	for {set i 0} {$i<$length} {incr i} {
+		append code [string index $string [rnd 0 $stringlength]]
+	}
+	return $code
+}
+proc send_mail {recipient subject body {Bcc ""}} {
+    package require smtp
+    package require mime
+    package require base64
+    set token [mime::initialize -canonical text/html  -string $body]
+    mime::setheader $token Subject $subject
+	mime::setheader $token From "\"Life Beyond Apocalypse\" <no-reply@lifebeyondapocalypse.net>" -mode append
+    mime::setheader $token To $recipient -mode append
+    if {$Bcc != ""} {  mime::setheader $token Bcc $Bcc -mode append }
+	smtp::sendmessage $token -ports 587 -recipients $recipient -servers smtp.gmail.com -username lifebeyondapocalypse@gmail.com -password [::base64::decode "RHVtbmV6ZXVsMw=="]
+    smtp::sendmessage $token -ports 25 -recipients $recipient -servers localhost
+    mime::finalize $token
+}
+proc simpleObject {args} {
+	foreach {key value} $args {
+		append obj $key : '[::xhtml::removequotes ${value}]' ,
+	}
+	web::put $obj
+}
+proc langItem {item} {
+	return [string tolower [regsub -all {\s} $item {}]]
+}
+#############
+#Database Selections
+#############
+#Selections needed for the main map pages
+proc SelectThingsNeeded {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	#Select the local building info
+	GlobalVar::carray set Building [DatabaseFetchArray "select  type,townID,x,y,buildingtypeID,description,damage,Buildings.status,barricades,radiationLevel,hasGenerator,hasTransciever,generatorTime
+	from Buildings,BuildingsDesc where (x='$LostPlayer(x)' and y='$LostPlayer(y)') and Buildings.townID='$LostPlayer(townID)' and BuildingsDesc.id=Buildings.buildingtypeID"]
+	GlobalVar::cset players [DatabaseQuery "select LostPlayers.userID,LostPlayers.username,LostPlayers.health,LostPlayers.maxHealth from Buildings,LostPlayers
+		WHERE LostPlayers.Status='Alive' and (Buildings.x=LostPlayers.x and Buildings.y=LostPlayers.y) and (Buildings.x='$LostPlayer(x)'
+		and Buildings.y='$LostPlayer(y)' and (Buildings.townID='$LostPlayer(townID)' and Buildings.townID=LostPlayers.townID)
+		and LostPlayers.inbuilding='$LostPlayer(inbuilding)' AND NOT LostPlayers.username='$LostPlayer(username)') LIMIT 0,10"]
+	#Still select the skill names..
+	GlobalVar::cset skills [DatabaseQuery "select Skills.skill from PlayerSkills,Skills where userID='$LostPlayer(userID)' and Skills.skillID=PlayerSkills.skillID"]
+}
+proc SelectSkill {skillName} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	return [DatabaseQuery "select Skills.skill from PlayerSkills,Skills where userID='$LostPlayer(userID)' and Skills.skillID=PlayerSkills.skillID and Skills.skill='$skillName'"]
+}
+proc SelectAllSkills {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	return [DatabaseQuery "select Skills.skill from PlayerSkills,Skills where userID='$LostPlayer(userID)' and Skills.skillID=PlayerSkills.skillID"]
+}
+#############
+#Display Messages & Logs
+#############
+proc DisplayLogMessages {} {
+#upvar LostPlayer LostPlayer
+array set LostPlayer [GlobalVar::carray get LostPlayer]
+if 0 {
+#Journal
+DatabaseExec "CREATE TABLE Journal(username VARCHAR(250), journalText TEXT, time INT)" 
+#Messages
+DatabaseExec "CREATE TABLE Messages(fromUser VARCHAR(250), toUser VARCHAR(250), msg VARCHAR(250), time INT, readMsg INT)"
+#LocalMsg
+DatabaseExec "CREATE TABLE LocalMsg(fromUser VARCHAR(250), inbuilding INT, town VARCHAR(50), x INT, y INT, msg VARCHAR(250), time INT)"
+#Actions
+DatabaseExec "CREATE TABLE Actions(username VARCHAR(250),  action TEXT, time INT)"
+}
+	#Display all messages from the last action till now..
+	set localMessages [DatabaseQuery "SELECT msgTime,fromUser,msg FROM LocalMsg WHERE inbuilding='$LostPlayer(inbuilding)' and townID='$LostPlayer(townID)' and x='$LostPlayer(x)' and y='$LostPlayer(y)' and msgTime>='$LostPlayer(lastAction)'-180 ORDER BY (msgTime+0) DESC"]  
+	set messages [DatabaseQuery "SELECT msgTime,fromUser,msg FROM Messages WHERE fromUser='SYSTEM' and toUser='$LostPlayer(username)' and msgTime>='$LostPlayer(lastAction)'-180 ORDER BY (msgTime+0) DESC"]  
+	if {$localMessages != 0} { 
+		set timenow [unixtime]
+		web::put "<p>"
+		foreach {time fromUser msg} $localMessages {
+			set user  "<a href=\"#\" class=\"player-profile\" userID=\"$userID\" username=\"$username\">$username</a> "
+			web::put "$user [boldSpan $msg]   <span style=\"font-size:12px;color:lightgray;\">([timeDiff [expr {$timenow -$time}]] ago)</span><br/>"
+		}
+		web::put "</p>"
+	}
+	#<a href=\"./[newUrl profile.ws3 default profile $userloc]\" 
+	#rel=\"./profile.ws3?ApocalYpsE=ajaxVersion&profile=$userloc\" title=\"<span class='bold'>$userloc's</span> profile\" class=\"player\">$userloc</a>"
+
+	if {$messages != 0} { 
+		set timenow [unixtime]
+		web::put "<p>"
+		foreach {time fromUser msg} $messages {
+			set user  "<a href=\"#\" class=\"player-profile\" userID=\"$userID\" username=\"$username\">$username</a> "
+			web::put "$user [boldSpan $msg] <span style=\"font-size:12px;color:lightgray;\">([timeDiff [expr {$timenow -$time}]] ago)</span><br/>"
+		}
+		web::put "</p>"
+	}
+}
+
+#TODO add this..:P
+#Index Page
+proc indexPage {{jquery ""}} {
+page "Free online Persistent Browser Zombie Apocalypse Online Role Playing Game"  {
+	#foreach request [web::request -names] {
+		#web::put "<p> $request : [web::request $request] </p>"
+	#}
+	
+	web::put  {<p><span class="bold">Life Beyond Apocalypse</span>(BETA) is a PBG (Persistent Browser Game) which means that the game goes on. It takes place in a world after the world has been destroyed and zombies wonder around. You can play either a Zombie or one of the four Human classes (Technician, Survivor, Mercenary or Sciencetist).</p> } 
+	web::put {<p>The game is currently in <span class="bold">BETA</span> phase which means that it's under development. Updates and bug fixes are made daily. If you see errors, please report them as fast as possible to lifebeyondapocalypse@gmail.com</p>}
+	web::putx "<p><a href=\"[newUrl auth.ws3 register]\" class='menuLink'>Register now!</a></p>"
+	web::putx "Your current lang: [LifeBeyond::cget Lang]"
+	}  $jquery
+}
+#############
+#Initializer.. Code that is run on every page request
+#############
+
+web::initializer {
+	if {$database == "sqlite3"} {
+		sqlite3 lba [web::request DOCUMENT_ROOT]/../LifeBeyondApocalypse.sqlite
+	} else {
+		if {[catch {set lba [mysql::connect -host localhost -user lifebeyond -password ApocalYps3 -db lifebeyondapocalypsedb] 
+		 	} databaseError]} { web::put "Could not connect to mysql.. oops! $databaseError" ; exit  }
+	}
+	NewTurn
+}
+
+#Code that's run when every page has ended
+web::finalizer {
+	if {$database == "sqlite3"} {
+		lba close
+	} else { mysql::close $lba }
+
+}
+
+
+#/OBF

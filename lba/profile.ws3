@@ -1,0 +1,254 @@
+
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+proc DisplayProfile {} {
+
+}
+proc ShowProfile {userID} {
+	array set AnotherPlayer [DatabaseFetchArray "select * from LostPlayers where userID='$userID'"]
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	array set skills [GlobalVar::carray get skills]
+	web::putx {
+	<?web::put [Lost:lang level]?>: <span class="bold"><? web::put [GetLevel $AnotherPlayer(level)] ?></span><br/>
+		<?web::put [Lost:lang town]?>: <span class="bold"><? web::put [DatabaseQuery "SELECT town from Towns where id='$AnotherPlayer(townID)'"] ?></span><br/>
+		<?web::put [Lost:lang status]?>: <span class="bold"><? web::put $AnotherPlayer(status) ?></span><br/>
+		<?web::put [Lost:lang class]?>: <span class="bold"><? web::put $AnotherPlayer(class) ?></span><br/>
+		<?web::put [Lost:lang warnlvl]?>: <span class="bold"><? web::put $AnotherPlayer(warnlvl) ?></span><br/>
+		<?web::put [Lost:lang clan]?>: <span class="bold"><? web::put $AnotherPlayer(clan) ?></span><br/>
+		<h3>User Options</h3>
+		<? web::put [newLink [newUrl communication.ws3 New toOther $AnotherPlayer(username)] [Lost:lang sendMessage]] ?><br/>
+		<? web::put "<a href='#' class='attackUser' username='$AnotherPlayer(username)' userid='$AnotherPlayer(userID)'> [Lost:lang attack]</a>" ?><br/>
+		Add As Friend<br/>
+		Report Abuse<br/>
+	}
+
+	#TODO if username is in the same place as I am..
+	#Heal username
+	#Attack username
+	#Trade with username
+	web::putx {
+		<script>
+			//Dialog to be sure you want to drop the item:)
+		$('.attackUser').click(function(event) {
+				event.preventDefault();
+				var thisButton = $(this)
+				$( "#dialog" ).css('textAlign','center').dialog({
+					title: '<? web::put [Lost:lang attackUser $AnotherPlayer(username)] ?>',
+					"buttons" : {
+						"<? web::put [Lost:lang attack] ?>": function() {
+							//handle attack..?
+								loadingAjax('#dialog','GET',thisButton.attr('link'));
+					
+							},
+						"Cancel": function() { $(this).dialog("close"); },
+					},
+				});
+			
+			});
+			$('.useItem').click(function(event) {
+				event.preventDefault();
+				loadingAjax('#dialog','GET',thisButton.attr('link'));		
+			});
+			$('.uibutton').button();
+			
+		</script>
+	}
+	#set otherPlayer [web:post adversary]
+	#set Item [web:post weapon]
+	#set attTimes [web:post times]
+
+	if {[VerifyLevel 4]} {
+		web::putx {
+			<h3>Admin Functions</h3>
+			<? web::put [newLink [newUrl admin.ws3 playerInfo player $AnotherPlayer(username)] "View Full Info"] ?><br/>
+			<? web::put [newLink [newUrl admin.ws3 goToPlayer player $AnotherPlayer(username)] "Go to Player"] ?><br/>
+			<? web::put [newLink [newUrl admin.ws3 giveItems player $AnotherPlayer(username)] "Give Items"] ?><br/>
+			<? web::put [newLink [newUrl admin.ws3 banUsername player $AnotherPlayer(username)] "Ban"] ?><br/>
+		}
+	}
+	
+}
+proc ProfileImage {class} {
+	regsub {\s} $class "" className
+	return "<div id=\"leftContent\" style=\"margin: 0 auto;\"><img style=\"width: auto; height:auto;\" title=\"$className\" src=\"./images/char/${className}.jpg\"/></div>"
+}
+proc InBuilding {inside} {
+	if {$inside ==0} { return [Lost:lang outside] } else { return [Lost:lang inside]  }
+}
+proc myProfile {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	page [Lost:lang profilePageOf $LostPlayer(username)]  { 
+		web::put [ProfileImage $LostPlayer(class)]
+		web::putx {<div id="rightContent"><table border="1">
+			<tr><td><?web::put [Lost:lang energy]?></td><td class="bold"> <? web::put $LostPlayer(energy)/$LostPlayer(maxenergy) ?> 
+			</td><td><?web::put [Lost:lang health]?></td><td class="bold"><? web::put $LostPlayer(health)/$LostPlayer(maxhealth) ?>
+			</td></tr><tr><td><?web::put [Lost:lang experience]?></td><td class="bold"><? web::put "$LostPlayer(exp) </td><td>Exp used</td><td class=\"bold\">$LostPlayer(maxxp)" ?>
+			</td></tr><tr><td><?web::put [Lost:lang encumbrance]?></td><td> <? web::put "$LostPlayer(encumbrance)%" ?> </td><td><?web::put [Lost:lang clan]?></td><td class="bold"><? web::put $LostPlayer(clan) ?></
+			</td></tr><tr><td><?web::put [Lost:lang level]?></td><td class="bold"><? web::put [GetLevel $LostPlayer(level)]  ?>
+			</td><td><?web::put [Lost:lang warnlvl]?></td><td> <span class="bold"><? web::put $LostPlayer(warnlvl)  ?>
+			</td></tr><tr><td> <?web::put [Lost:lang foodLevel]?></td><td class="bold"><? web::put $LostPlayer(foodlvl) ?>
+			</td><td><?web::put [Lost:lang waterLevel]?></td><td class="bold"><? web::put $LostPlayer(waterlvl) ?></td></tr>
+
+			<tr><td> <?web::put [Lost:lang created]?></td><td class="bold"><? web::put [givetime $LostPlayer(created)] ?></td>
+			<td> <?web::put [Lost:lang lastAction]?></td><td class="bold"><? web::put [givetime $LostPlayer(lastAction)] ?> </td></tr>
+
+			<tr><td> <?web::put [Lost:lang town]?></td><td class="bold"><? web::put  [DatabaseQuery "SELECT town from Towns where id='$LostPlayer(townID)'"] ?></td>
+			<td colspan="2"> <? web::put "[InBuilding $LostPlayer(inbuilding)]  at $LostPlayer(x),$LostPlayer(y)" ?></td></tr>
+
+			<tr><td> <?web::put [Lost:lang deathcount]?></td><td class="bold"><? web::put  $LostPlayer(deathcount) ?></td>
+			<td> <?web::put [Lost:lang killcount]?></td><td class="bold"><? web::put  $LostPlayer(killcount) ?> </td></tr>
+			<tr><td colspan="3"> <?web::put [Lost:lang revivedwithsyringe]?></td><td class="bold"><? web::put  $LostPlayer(revived) ?></td></tr>
+		} 
+		if {$LostPlayer(energy) <= [expr $LostPlayer(maxenergy)*0.1]} { addLabel warning "Only $LostPlayer(energy) energy left!" }
+
+		web::put "</table></div>"
+		web::putx {
+		<div id="tabs" style="clear:both;">
+			<ul>
+				<li><a href="<? web::put [newUrl profile.ws3 loadItems] ?>">Items</a></li>
+				<li><a href="<? web::put [newUrl skills.ws3] ?>">Skills</a></li>
+				<li><a href="#">Other stuff</a></li>
+			</ul>
+			<div id="tabs-1">
+
+			</div>
+		</div><div id="dialog"></div>
+		}
+	} {
+		//tabs
+		$( "#tabs" ).tabs({
+			ajaxOptions: {
+				error: function( xhr, status, index, anchor ) {
+					$( anchor.hash ).html(
+						"Tab couldn't be loaded.." );
+				}
+			}
+		});
+		
+		//list inventory stuff
+
+	
+	}
+}
+#############
+#Inventory stuff
+#############
+
+proc ListInventory {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set items [DatabaseQuery "SELECT Distinct ItemsDesc.name as itemname,Subitem,Items.itemID,ItemsDesc.encumbrance,(select count(ItemsDesc.name) from Items,ItemsDesc where Items.userID='$LostPlayer(userID)' and ItemsDesc.itemID=Items.itemID and ItemsDesc.name=itemname) as total,ItemsDesc.itemvalue from Items,ItemsDesc where ItemsDesc.itemID=Items.itemID and Items.userID='$LostPlayer(userID)' ORDER BY ItemsDesc.name ASC"]
+	set players [GlobalVar::cget players]
+	
+	#web::put {<p>Inventory items <a href="#" id="showItems">[-]</a></p><div id="items">}
+
+	#TODO .. add dialog's  for dropping items..
+	web::put {<p>Inventory items </p>}
+	if {$items == ""} { addLabel info [Lost:lang noItems] } else {
+		if {$LostPlayer(status) != "Zombie"} {
+			web::put "<table style='border:1px solid green;' class='borderBottom'><tr><th>[Lost:lang image]</th><th>[Lost:lang itemName]</th><th>[Lost:lang enc]</th><th>#</th><th>[Lost:lang aproxTradeValue]</th><th colspan='3'>[Lost:lang actions]</th></tr>"
+			foreach {item subitem id encumbrance total itemvalue} $items {
+				set item [string tolower [regsub -all {\s} $item {}]]
+				set subitem ""
+				set itemName $item
+				
+				switch $item {
+					"Pistol" { set subitem "($item($subitem))" }
+					"Shotgun" { set subitem "($item($subitem))" }
+					"Mobile Phone" {
+						set unreadMessages [DatabaseQuery "SELECT count(msgid) FROM Messages WHERE toUser='$LostPlayer(username)' and readMsg=0"]
+						if {$unreadMessages > 0} { set subitem "($unreadMessages)" }
+					}
+				}
+				
+				#Set to lower & remove the spaces so we have a right translation
+				web::putx {<tr style='border-bottom:1px solid #594B4B;'>}
+				web::put "<td>[ItemImage $item]</td><td><p width='120px'>[Lost:lang $itemName] $subitem</p></td><td>[expr {$encumbrance*$total}] ($encumbrance)</td><td>$total</td><td style='text-align:center;'>$itemvalue</td>"
+				web::put "<td> <a href='#' alt='[Lost:lang dropItem]'  title='[Lost:lang dropItem]' itemname='$itemName' link='[newUrl items.ws3 dropItem itemid $id]' class='dropItem ui-icon ui-icon-trash ui-button ui-corner-all '>[Lost:lang dropItem] </a> </td>"
+				web::put "<td> <a href='#' alt='[Lost:lang useItem]' title='[Lost:lang useItem]' link='[newUrl items.ws3 useItem itemid $id]' class='uibutton useItem'>[Lost:lang useItem] </a> </td>"
+
+				#Todo put this on the profile page link 
+				switch $item {
+					"First Aid Kit" { 
+						web::put {<label class="map" for="weapon">on </label><select id="healWho" name="healWho"> }
+						web::put "<option value=\"$LostPlayer(username)\">[Lost:lang self] </option>"
+						foreach {player health} $players {
+							web::put "<option value=\"$player\">$player</option>"
+						}
+						web::put </select>
+					}
+				}
+					web::put </tr>
+			}
+		} else { web::put [Lost:lang zombiescantuseitems]  }
+		
+		web::put </table>
+	}
+	web::putx {
+	<script>
+		//Dialog to be sure you want to drop the item:)
+		$('.dropItem').click(function(event) {
+				event.preventDefault();
+				var thisButton = $(this)
+				$( "#dialog" ).css('textAlign','center').dialog({
+					title: '<? web::put [Lost:lang dropItemButton] ?>',
+					"buttons" : {
+						"<? web::put [Lost:lang dropItemButton] ?>": function() {
+								loadingAjax('#dialog','GET',thisButton.attr('link'));
+								$('#tabs').tabs("load",$( "#tabs" ).tabs( "option", "selected" ));
+								$(this).dialog("close");
+							},
+						"Cancel": function() { $(this).dialog("close"); },
+					},
+				}).html('<p>Are you sure you want to drop <b> ' + $(this).attr("itemname") + ' </b>?');
+			
+			});
+			$('.useItem').click(function(event) {
+				event.preventDefault();
+				loadingAjax('#dialog','GET',thisButton.attr('link'));		
+			});
+			$('.uibutton').button();
+	</script>
+	}
+}
+
+
+#############
+#Dispatching commands
+#############
+web::command default {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		myProfile
+		SaveSession
+	}
+}
+web::command loadItems {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		ListInventory
+		SaveSession
+	}
+}
+web::command ajaxVersion {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		set userID [web:get userID]
+		if {$userID != ""} {
+			ShowProfile $userID
+		}
+		SaveSession
+	}
+}
+
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+	 
+
+

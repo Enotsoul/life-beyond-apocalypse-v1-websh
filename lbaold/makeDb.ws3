@@ -1,0 +1,277 @@
+#Example using MySQL
+web::include [file dirname [web::config script]]/gamesys/databasefunctions.ws3 msg
+
+#TODO.. WEB INTERFACE!
+package require mysqltcl
+set lba [mysql::connect -host localhost -user lifebeyond -password ApocalYps3 -db lifebeyondapocalypse]
+#Keep in mind, that mysql syntax is slightly different from sqlite3 syntax!
+#VARCHAR(250) can't have DEFAULT, AUTO_INCREMENT, collate not needed
+
+#Edit ONLY if you know what you're doing
+#load ./libsqlite3.6.so Sqlite3
+#package require sqlite3
+
+##database
+#sqlite3 lba ./LifeBeyondApocalypse.sqlite
+# LostPlayers
+try {
+#Removed the question & answer.. e-mail is better
+web::put "Starting db"
+DatabaseExec "CREATE TABLE LostPlayers(id INTEGER PRIMARY KEY auto_increment, username VARCHAR(250), password VARCHAR(250), language VARCHAR(250), 
+email VARCHAR(250) UNIQUE, exp INT DEFAULT 0, maxxp INT DEFAULT 0, 
+level INT DEFAULT 2, created INT, lastAction INT DEFAULT 0, regip VARCHAR(250), encumbrance INT, health INT DEFAULT 100, 
+maxhealth INT DEFAULT 100, warnlvl INT DEFAULT 0, energy INTEGER DEFAULT 200, maxenergy INTEGER DEFAULT 200,
+ inventory INT DEFAULT 0, waterlvl INT DEFAULT 10, foodlvl INT DEFAULT 20,radiation INT DEFAULT 0, clan VARCHAR(250), 
+ energyuse INT, x INT, y INT, town VARCHAR(250), inbuilding INT DEFAULT 0, status VARCHAR(250), class VARCHAR(250), 
+ deathcount INT DEFAULT 0, killcount INT DEFAULT 0, infected INT DEFAULT 0, revived INT DEFAULT 0, activationCode VARCHAR(250), activated INT DEFAULT 0)"
+#LostPlayers Login status & IP
+DatabaseExec "CREATE TABLE PlayersAdministration(username VARCHAR(250), loginTime INT DEFAULT 0, loginIP VARCHAR(250))"
+#PlayersAccuracy
+DatabaseExec "CREATE TABLE PlayersAccuracy(username VARCHAR(250) PRIMARY KEY,HandToHand INT, Pistol INT, Shotgun INT, Blade INT, Axe INT)"
+#ZombieAttacks
+DatabaseExec "CREATE TABLE ZombieAttacks(username VARCHAR(250) PRIMARY KEY, WeaponsAcc INT, WeaponsDmg INT, BiteAcc INT, BiteDmg INT, ClawAcc INT, ClawDmg INT)"
+#Clans
+DatabaseExec "CREATE TABLE Clans(Owner VARCHAR(250) PRIMARY KEY , clanName VARCHAR(250)  UNIQUE,description TEXT, initialOwner VARCHAR(250) )"
+#Items
+DatabaseExec "CREATE TABLE Items(id INTEGER PRIMARY KEY auto_increment, username VARCHAR(250), item VARCHAR(250), subitem INT, break INT, share INT)"
+#ItemsDesc
+DatabaseExec "CREATE TABLE ItemsDesc(name VARCHAR(250), encumbrance INT, description TEXT, type VARCHAR(250) )"
+#Weapons
+DatabaseExec "CREATE TABLE Weapons(id INTEGER PRIMARY KEY auto_increment UNIQUE, name VARCHAR(250), damage INT, accuracy INT)"
+proc AddItems {name encumbrance {description "This item has no description"} {type "Misc"} {damage ""} {accuracy ""}} {
+	DatabaseExec "INSERT INTO ItemsDesc VALUES ('$name','$encumbrance','$description','$type')"
+	if {$type == "Weapon"} {
+		DatabaseExec "INSERT INTO Weapons (name,damage,accuracy) VALUES ('$name','$damage','$accuracy')"
+	}
+}
+AddItems Wine 1 "Gets you drunk but gives you +1 HP." Food 1 
+AddItems Toolbox 12 "Something every handyman should have. Contains many tools like hammer, scredriver,mini saw.. etc" Weapon 2 10 
+AddItems Wood 2 "Piece of wood used in many things." 
+AddItems "Spare Parts" 3 "Iron rests, screws, plastic pieces, wires"
+AddItems Nylon 2 "Clothing"
+AddItems "Cotton Tifon" 1 "Used in many things."
+AddItems "Medicinal Herbs" 1 "Well, since no pills exist, you can use some herbs"
+AddItems "Lab Liquids" 3 "Liquids from the lab"
+AddItems Chemicals 2 "Chemicals used to make Lab Liquids"
+AddItems "Gas Mask" 3  "Used against air pollution."
+AddItems Helmet 3 {Used against zombies. Hope they won\'t bite and infect anymore!}
+AddItems Crowbar 5 "Easy to destroy barricades..." Weapon 2 10
+AddItems "Pistol Clip" 1 "Reload your pistol" 
+AddItems "Shotgun Shells" 1 
+AddItems "Lab Equipment" 7 "Testing things & when making antidotes"
+AddItems "Fuel Canister" 5 "Contains up to a maximum of 10 liters. Each extra liter +1% encumbrance. Can also be used as a weapon. Hitting & soaking clothes." Weapon 1 15
+AddItems Radio 1  "Good for getting messages from frequencies between 30Hz and 110Hz"
+AddItems "Radio Transmitter" 18	"Sending radio transmissions 300 chars long"
+AddItems "Portable Generator" 18 "Used for equipment in some buildings powers buildings with energy for 5 real days per fuel canister. Can be damaged, each succesfull dmg takes 1 point.. 10 points.  5xp for destroyer(zombie) + 1AP/1E for repairing"
+AddItems Book 1  "25% chance of getting 1 Xp(2 xp for Medics)  10% chance to be finished"
+AddItems "Orthodox Bible" 2 "Used for reading (somehow protective against zombie hordes)"
+AddItems Newspaper 1  "Read random news, hit someone with it(no damage)" Weapon 0 100
+AddItems "Journal and Pen" 2  {Write stories, keep a journal(log) for when someone finds you and you\'re lying dead they know who you are.}
+AddItems Battery 1 "Good for Teaser/Radio/Mobile" ; #This will be something in the future
+AddItems Binoculars 3 "Binoculars at the cost of 3 AP tell you the status of 7X7 buildings around you. You automatically climb unto a building."
+AddItems "Flare Gun" 2 "Shoots a flare in the air, people will see it as a message, zombies look at it and get idle for 1 turn if attacked" Weapon 15 15
+AddItems "Mobile Phone" 1  "Able to send/recieve messages each message is max 500 Characters long.. Good only under signal"
+AddItems "First Aid Kit" 2 "First Aid Kit is used for healing +15HP (+5HP for Healing trait extra +5h if in hospital) 4XP healing someone (1XP on yourself)"
+AddItems Antidote 1 "Heals infections"
+AddItems Trap 5 "Traps zombies 10% escape chance +3dmg or humans (if stupid enough to get trapped, 30% +2dmg) escape trap = destroy trap"
+AddItems BOMB 13 "+15 DMG to all people/Zombie/building +7XP & 1XP for each hit"
+AddItems "Water Canister" 7	"+15 water" Water
+AddItems "Water Bottle" 3 "+5 water" Water
+AddItems "Can Food" 5 "5 food" Food
+AddItems "Dried Food" 3	"7 food (+5 water needed)" Food
+AddItems "Empty Syringe" 1 "Used in making survival syringe. Can also be used for an antidote"
+AddItems "Survival Syringe" 1 "Reviving the dead. Making zombies human."
+AddItems "Zombie Revival Lab Mixture" 1 "Used for Survival Syringe, this can only be purchased" 
+
+proc AddWeapon {name damage accuracy} {
+	DatabaseExec "INSERT INTO Weapons (name,damage,accuracy) VALUES ('$name','$damage','$accuracy')"
+}
+#Add Weapons
+AddWeapon Punch 2 10
+AddItems "Pool Cue" 2 "Simple weapon" Weapon 2 10
+AddItems "Baseball Bat" 2 "Baseball bat" Weapon 2 15
+AddItems Knife 1 "Your best friend in need. How else to open a can?!?" Weapon 3 20
+AddItems Axe 7 "AKA FireAxe" Weapon 4 10
+AddItems Kantana 7 "Japanese sword, best craftmanship" Weapon 5 15
+AddItems Pistol	1 "Good and not so messy" Weapon 5	15 
+AddItems Shotgun 5 {They\'ll know you mean bussines!} Weapon 10 10 
+AddItems Chainsaw 10 "Good Old chainsaw, little rusty.. (1 fuel canister for 20 uses 15% chance to get stuck)" Weapon 5 35 
+AddItems Taser 3 "Teach your zombies a lesson! 5 uses per battery. 3% chance of battery explosion -20 hp" Weapon 6 45
+AddItems "Flak jacket" 8 "20% damage reduction against damages of 5 or more." Clothing
+AddItems "Radiation Suite" 8 "Protection against radiation, can be destroyed by bullets/attacks.." "Misc Clothing"
+
+#Skills
+DatabaseExec "CREATE TABLE Skills(Class VARCHAR(250), Skill VARCHAR(250), SkillDescription TEXT, xp INT, level INT, SkillRequired VARCHAR(250))"
+#PlayerSkills
+DatabaseExec "CREATE TABLE PlayerSkills(username VARCHAR(250), Skill VARCHAR(250), xp INT)"
+proc AddSkill {Class Skill SkillDescription xp {level 0} {SkillRequired None}} {
+	DatabaseExec "INSERT INTO Skills  VALUES ('$Class','$Skill','$SkillDescription','$xp','$level','$SkillRequired')"
+}
+#Mercenary
+AddSkill Mercenary "Combat tactics" "+15% accuracy to all hand to hand attack items"  100  
+AddSkill Mercenary "Blade Sharpener" "+15% accuracy to all bladed items" 150 1 "Combat tactics" 
+AddSkill Mercenary "Axe handling" "+15% accuracy with an axe" 150 2  "Blade Sharpener" 
+AddSkill Mercenary "Basic firearms training" "+20% accuracy on all firearms" 150
+AddSkill Mercenary "Pistol training" "+20% accuracy" 200 1 "Basic firearms training"
+AddSkill Mercenary "Advanced Pistol Training" "+15% accuracy" 150 2 "Pistol training"
+AddSkill Mercenary "Shotgun training" "+20% accuracy" 200 1 "Basic firearms training"
+AddSkill Mercenary "Advanced Shotgun Training" "+15% accuracy" 150 2 "Shotgun training"
+
+#[Technician]  
+AddSkill Technician Recycler "You are able to recycle things, find fuel in cars/busses and fill a can with it. Junkyard gives +1-2% per item. Various items also have +1%" 150
+AddSkill Technician Construction "Repair buildings and barricade them correctly" 150
+AddSkill Technician "Electrical equipment"  "Repairing/using: radio transmitter, generator, antenna station" 200
+AddSkill Technician "Trap and Bomb building" "You can build traps and bombs, very usefull when there are lots of zombies outside. You can also see them and disarm them." 200
+AddSkill Technician "Misc Clothing" "Repairing and creating clothing" 170
+
+
+#[Medic] 
+AddSkill Medic Healing "Heals extra 5HP per FAK" 100
+AddSkill Medic "First Aid" "FirstAid Kit making" 130 1 Healing
+AddSkill Medic Antidote "You can make antidotes for infections" 180 1 Healing
+AddSkill Medic "Lab Experiments" "Allows you to make lab liquids out of chemicals " 100
+AddSkill Medic DNA "Being able and detect zombies easier Name&Profile" 180 1 "Lab Experiments"
+AddSkill Medic "Certified DNA Medic" "This helps you in creating revival syringe, note, this can only be created in a Powered Laboratory or Hospital." 150 2 DNA
+AddSkill Medic Radiations "Able to decontaminate people/places" 200 
+AddSkill Medic  Diagnosis "Detect user HP and infections to be able to heal them." 100
+
+#[Survivor] 
+AddSkill Survivor Looting "25% Better chance when searching for something (Chance DOES not add, but gets multiplied)"	120
+AddSkill Survivor Stealth "You can silently run from one building to another even if it is baricaded(without getting in the street)" 200
+AddSkill Survivor Dexterity "+50 max energy" 130 1 Stealth
+AddSkill Survivor "Harsh Survival" "Extra 50 max health" 150	
+AddSkill Survivor Ambush "first 3 attacks: +30% accuracy +50% dmg (only hth knife/axe/kantana)" 150 1 "Harsh Survival"
+AddSkill Survivor Avenger "If any heavily wounded(>50%HP) or fresh dead survivors are in room, +20% accuracy, +30% dmg on zombies" 170 2 Ambush
+AddSkill Survivor "Imunity System" "radiation effects halven, infections get cured when using first aid kit + infections take -1hp per 5 energy" 200
+
+#[Zombies] 
+
+AddSkill Zombie "Life Memory" "Brain parts function again (entering buildings is easier and using guns/weapons is possible though you get only 20% accuracy)" 200
+AddSkill Zombie Ransack  "Zombie is able to damage the interior of abandoned buildings, making them harder to search until they are repaired." 150 1 "Life Memory"
+AddSkill Zombie "Undead senses" "Using 1 energy instead of 2 energy for movement and basic stuff" 150 1 "Life Memory"
+AddSkill Zombie "Flesh Scent" "You feel infected survivors(ones becoming a zombie if they die) and know if a zone is under radiation." 130 2 "Undead senses"
+AddSkill Zombie	"Blood Trail" "Sees hp of users and detects wounded survivors up to 5x5 blocks(under 50% hp)." 150 2 "Undead senses"
+AddSkill Zombie	"Tongue scrabble" {Zombies can communicate with eachother in zombian language, it\'s not possible to understand it in human language.} 200 1 "Life Memory"
+AddSkill Zombie	"Leader" "All other zombies that are in that zone have 50% chance to protect you when hit + 25% chance to *try* to strike back at the one who attacked you. Also, of course only applies to non-zombies..." 250 2 "Tongue scrabble"
+AddSkill Zombie	 "Vigour Mortis" "+10% accuracy for hand to hand combat" 130
+AddSkill Zombie "Neck Bite" "+15% accuracy when biting" 150 1 "Vigour Mortis"
+AddSkill Zombie "Sharpened teeth" "+1 damage to bite" 150 2 "Neck Bite"
+AddSkill Zombie "Claws Grip" "+15% accuracy when trying to hit something" 170 1 "Vigour Mortis"
+AddSkill Zombie "Iron Fingers" "+1 damage when hitting" 150 2 "Claws Grip"
+AddSkill Zombie BloodShed "Every bite regenerates hp with the ammount you have bitten." 150 1 "Vigour Mortis"
+AddSkill Zombie "Death Infection" {After biting the human gets infected: -1hp per 2 energy, when he dies he becomes a zombie if he didn\'t use an antidote.} 150 2 "BloodShed"
+AddSkill Zombie  "Rotting Corpse" {Zombie\'s DNA tests and name/profile is harder to detect -25%.  Need to be in Laboratory to be Revived with a syringe} 100
+AddSkill Zombie Sunburst "No more daylight damage (usually you get +1dmg per 4 energy used outside in daylight)" 140 1 "Rotting Corpse"
+AddSkill Zombie "DNA Mutation" "+50 Max health, harder to get scanned/lab tests -25%"  200 1 "Rotting Corpse"
+AddSkill Zombie	Irradiate "Irradiating 3 radiation where passed (radiation does not increase beyond) DRAWBACK: 7% of getting 1 dmg" 230 2 "DNA Mutation"
+AddSkill Zombie "Basic Instinct" "+1 attack & 10% accuracy to biting & hitting"  150
+
+#Manufacturing
+DatabaseExec "CREATE TABLE Manufacturing(ItemName VARCHAR(250), SkillRequired VARCHAR(250), SuccessRate INT, ExpGained INT, EnergyUsed INT, Tools VARCHAR(250), produced INT)"
+#ManufacutringNeeds
+DatabaseExec "CREATE TABLE ManufacturingNeeds(ItemName VARCHAR(250), ItemNeeded VARCHAR(250), Quantity INT)"
+
+proc Manufacturing {name skillRequired successRate expGained energy items {tools "None"} {produced 1}} {
+	DatabaseExec "INSERT INTO Manufacturing VALUES ('$name','$skillRequired','$successRate','$expGained','$energy','$tools','$produced')"
+	foreach {item quantity} $items {
+		DatabaseExec "INSERT INTO ManufacturingNeeds VALUES ('$name','$item','$quantity')"
+	}
+	
+}
+
+Manufacturing "First Aid Kit" "First Aid" 95 4 3 {"Medicinal Herbs" 2 "Cotton Tifons" 3 "Lab Liquids" 1} None 2
+Manufacturing "Lab Liquids" "Lab Experiments" 95 2 2 {Chemicals 5} None 2
+Manufacturing Antidote Antidote 90 2 3 {"Medicinal Herbs" 1 "Lab Liquids" 1 Wine 1}
+Manufacturing Trap "Trap and Bomb building" 80 5 7 {"Spare Parts" 3} Toolbox
+Manufacturing "Radiation Suite"	 "Misc Clothing" 75 5 7 {"Nylon clothes" 3 "Cotton Tifon" 2 "Spare Parts" 2} 
+Manufacturing Taser	"Electrical equipment" 75 5 7 {"Mobile Phone" 1 "Spare Parts" 3}
+Manufacturing Bomb "Trap and Bomb building"	70 7 10 {"Lab Liquids" 3 "Spare Parts" 5}
+Manufacturing "Survival Syringe" "Certified DNA Medic" 60 3 7 {"Empty Syringe" 1 "Zombie Revival Lab Mixture" 1} ; # note, this needs to be made in a lit Laboratory or Hospital
+
+#Repairing			Needs	Skill	Success	Exp/energy
+DatabaseExec "CREATE TABLE Repairing(Item VARCHAR(250), SkillRequired VARCHAR(250), ExpGained INT, EnergyUsed INT, Tools VARCHAR(250))"
+DatabaseExec "CREATE TABLE RepairingNeeds(Item VARCHAR(250),ItemNeeded VARCHAR(250), Quantity INT)"
+proc Repairing  {name skillRequired items expGained energy {tools "None"}} {
+	DatabaseExec "INSERT INTO Repairing VALUES ('$name','$skillRequired','$expGained','$energy','$tools')"
+	foreach {item quantity} $items {
+		DatabaseExec "INSERT INTO RepairingNeeds VALUES ('$name','$item','$quantity')"
+	}
+	
+}
+Repairing "Radiation Suite"	"Radiation Suite" {Nylon 1}	2 3
+Repairing Building	Construction {Wood 1 "Spare Parts" 1}  1 1 "Toolbox"
+Repairing Baricading Construction {Wood 1} 1 1 "Toolbox" 
+Repairing "Portable Generator" "Electrical Equipment" {"Spare Parts" 1}  1 2 "Toolbox"
+
+#Towns
+DatabaseExec "CREATE TABLE Towns(id INTEGER PRIMARY KEY auto_increment, Town VARCHAR(250), owner VARCHAR(250),description VARCHAR(250), Accesible INT)"
+#BuildingsDesc
+DatabaseExec "CREATE TABLE BuildingsDesc(id INTEGER PRIMARY KEY auto_increment,Type VARCHAR(250), Status VARCHAR(250), Necessity INT)"
+#BuildingItems
+DatabaseExec "CREATE TABLE BuildingItems(Type VARCHAR(250), ItemName VARCHAR(250), ChanceFound INT)"
+
+proc addBuilding  {type necessity  {thingsFound "None"} {status "normal"}} {
+	DatabaseExec "INSERT INTO BuildingsDesc (Type,Status,Necessity) VALUES ('$type','$status','$necessity')"
+	foreach {item chance} $thingsFound {
+		DatabaseExec "INSERT INTO BuildingItems  VALUES ('$type','$item','$chance')"
+	}
+	
+}
+
+addBuilding WaterHouse	2 {"Water Bottle" 25 "Water Canister" 19}
+addBuilding Bank 1 {Book 15 Newspaper 25} Dark
+addBuilding Nightclub 2	{Wine 20 "Mobile Phone" 10 "Water Bottle" 15 "Dried Food" 15 Chemicals 7 "Baseball bat" 9} Dark
+addBuilding Casino 3 {"Pool Cue" 13 Radio 7 Pistol 7 Nylon 15} Dark
+addBuilding "Gas station" 2 {"Can Food" 7 "Spare Parts" 15 Toolbox 5 "Cotton Tifon" 15 "Fuel Canister" 11}
+addBuilding Hotel 2 {"Spare Parts" 6 "Mobile Phone" 5 "Cotton Tifon" 17 Newspaper 8 "Journal and Pen" 7}
+addBuilding Restaurant 2 {Knife 13 "Dried Food" 15 "Can Food" 18 Wood 10 "Medicinal Herbs" 15}
+addBuilding Skyscraper	2 {Binoculars 8 "Spare Parts" 10 "Baseball Bat" 7}
+addBuilding "Shopping mall" 3 {Taser 7 Axe 7 Knife 7 Wine 14 Binoculars 7  Battery 12 "Mobile Phone" 8 "Journal and Pen" 7 Radio 7 "Radio Transmitter" 10 Book 15 Helmet 10 Nylon 18 "Pool Cue" 7 "Pistol Clip" 10 "Shotgun Shells" 7}
+addBuilding Supermarket	2 {"Can Food" 10 "Dried Food" 10 "Water Bottle" 12 "Water Canister" 7 "Medicinal Herbs" 17}
+addBuilding Warehouse 3	{none 0} 	Dark
+addBuilding School	2 {"Baseball Bat" 7 "Spare Parts" 6 Nylon 8 Book 20 "Journal and Pen" 10 "Mobile Phone" 5}
+addBuilding Library 3 {Book 45 Newspaper 8}
+addBuilding Museum 3 {Kantana 9}
+addBuilding Theater	3 {none 0} Dark
+addBuilding Carpenter 3 {Chainsaw 8 Wood 17}		
+addBuilding "Antenna Mast" 5 {"Radio Transmitter" 7 "Mobile Phone" 12}	
+addBuilding "Fire station" 4 {Axe 9 "Portable Generator" 4 "Fuel Canister" 8 "First Aid Kit" 13 Nylon 10 "Spare Parts" 10 Chainsaw 5}
+addBuilding "Police station" 4 {Knife 9 Pistol 10 Shotgun 10 "Shotgun Shells" 12 "Pistol Clip" 17 "Baseball Bat" 15 Radio 13 "Radio Transmitter" 5 Taser 9 "Flak Jacket" 14 Binoculars 8}
+addBuilding Factory	4 {Crowbar 7 Radio 6 Nylon 7 "Spare Parts" 8 Wood 6 Toolbox 5 "Radiation Suite" 3}
+addBuilding "Power plant" 5	{"Portable Generator" 7 "Spare Parts" 13}
+addBuilding Refinery 4 {"Fuel Canister" 10 Nylon 8}
+addBuilding Fortification 5	{Trap 5 Bomb 5 Wood 15 "Shotgun Shells" 9 "Pistol Clip" 13 "Flak Jacket" 11}
+addBuilding "Storage silo" 3 {"Dried Food" 20 "Medicinal Herbs" 16}
+addBuilding Church 2 {"Orthodox Bible" 17 Wine 13 Kantana 6 "First Aid Kit" 7}
+addBuilding "Train station"	3 {Newspaper 5}
+#First Aid Kit is set to 21 in the beginning of the game because not many people can create it
+#but will be set to 13 later on. (for ingame reasons that it's harder to find:)
+addBuilding Hospital 3	{"First Aid Kit" 21 "Cotton Tifon" 21 "Medicinal Herbs" 20 "Empty Syringe" 15 Antidote 7}
+addBuilding Laboratory	3 {"Lab Equipment" 7 Chemicals 18 Antidote 9 "Empty Syringe" 15}
+addBuilding JunkYard 2 {Wood 13 "Spare Parts" 17 Nylon 15 Chemicals 14 "Empty Syringe" 9} 
+addBuilding Cemetery 1	{none 0}
+addBuilding Park 1 {"Medicinal Herbs" 27}
+addBuilding Street 1 {none 0}
+	
+#Buildings
+DatabaseExec "CREATE TABLE Buildings(id INTEGER PRIMARY KEY auto_increment, Town VARCHAR(250), x INT, y INT, type VARCHAR(250), name VARCHAR(250), description TEXT, damage INT, status VARCHAR(250), barricades INT, radiationLevel INT, hasGenerator INT DEFAULT 0, hasTransciever INT DEFAULT 0, generatorTime INT DEFAULT 0)"
+
+#System/game based stuff
+#Journal
+DatabaseExec "CREATE TABLE Journal(username VARCHAR(250), journalText TEXT, journalTime INT)" 
+#Messages
+DatabaseExec "CREATE TABLE Messages(msgid INTEGER PRIMARY KEY auto_increment, fromUser VARCHAR(250), toUser VARCHAR(250), msg TEXT, msgTime INT, readMsg INT, flag INT DEFAULT 0)"
+#LocalMsg
+DatabaseExec "CREATE TABLE LocalMsg(fromUser VARCHAR(250), inbuilding INT, town VARCHAR(50), x INT, y INT, msg VARCHAR(250), msgTime INT,flag INT DEFAULT 0)"
+#Actions
+DatabaseExec "CREATE TABLE Actions(username VARCHAR(250),  action TEXT, actionTime INT)"
+#System
+DatabaseExec "CREATE TABLE System(Town VARCHAR(250), specialDay VARCHAR(250), Weather VARCHAR(250), TimeOfDay VARCHAR(250), GameHour INT, lastTurnTime INT)"
+#Special random codes for items in the game
+DatabaseExec "CREATE TABLE SpecialCodes(code VARCHAR(250), item VARCHAR(250), requested INT DEFAULT 0, quantity INT, used INT DEFAULT 0, usedBy VARCHAR(250))"
+
+set time [clock seconds]
+DatabaseExec "INSERT INTO Messages (fromUser,toUser,msgTime,readMsg) VALUES('SYSTEM','SYSTEM',$time,0)"
+web::put "Database created with no error!"
+mysql::close
+} on error {err} { web::put $err }

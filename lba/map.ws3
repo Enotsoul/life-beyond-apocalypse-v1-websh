@@ -1,0 +1,811 @@
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+
+#############
+#Map Generation - Split actions from map..
+#############
+
+#Handles the movement in the map..
+proc MapMovement {{movex ""} {movey ""} {map "map"}} {
+	global errors
+	
+	SelectThingsNeeded
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	array set Building [GlobalVar::carray get Building]
+	set skills [GlobalVar::cget skills]
+		
+	if {[VerifyEnergy $LostPlayer(energy) 1]} {
+		if {$movex != "" && $movey != "" && ($movey != $LostPlayer(y) || $movex != $LostPlayer(x))} {
+			
+			#Control if player is near edge, used later when you can just chose where to go.. if ever
+			#if {[Edge $LostPlayer(x) $LostPlayer(y) $LostPlayer(townID)] == 0} { return }
+			set toUseEnergy [expr {round(sqrt(($LostPlayer(x)-$movex)**2+($LostPlayer(y)-$movey)**2))}]
+			
+			#Humans can parkour from one building to the other at the cost of  2 energy
+			#if they travel from one part of the maap.ws3p to the other and they are inside a building..
+			#it uses x1.5 more energy.. because they jump from one building to another
+			#TODO: Another buton specifying tto go OUT on the street.. for those who have stealth
+			if {$LostPlayer(inbuilding) == 1 && $LostPlayer(status) != "Zombie"} {
+				if {![string match -nocase "*${Building(type)}*" "Park Rubble Street Cemetery"] &&  [string match -nocase "*Stealth*" $skills]} {
+					if  {$toUseEnergy>3} {
+						set LostPlayer(inbuilding) 0
+					}
+					set toUseEnergy [expr {round($toUseEnergy*1.5)}]
+				} else {  
+					incr LostPlayer(energy) -1 
+					set LostPlayer(inbuilding) 0
+				}
+			}
+			#Zombies always get out on the streets
+			if {$LostPlayer(inbuilding) == 1 && $LostPlayer(status) == "Zombie"} { set LostPlayer(inbuilding) 0 }
+			
+			if {[string match -nocase "*Undead senses*" $skills] && $LostPlayer(status) == "Zombie"} {
+				incr LostPlayer(energy) 0
+			} elseif {$LostPlayer(status) == "Zombie" && ![string match -nocase "*Undead senses*" $skills]} { 
+				incr LostPlayer(energy) -1	
+			}
+
+			if {$LostPlayer(energy)<$toUseEnergy} { append errors [Lost:lang youHaveNoEnergy] }
+			
+			if {[string length $errors] ==  0} {
+				#If the user tries to cheat and move further.. calculate more energy!
+				incr LostPlayer(energy) -$toUseEnergy
+				set LostPlayer(x) $movex; set LostPlayer(y) $movey ; set LostPlayer(lastAction) [unixtime]
+				if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+				DatabaseExec "UPDATE LostPlayers SET x='$LostPlayer(x)', y='$LostPlayer(y)', energy='$LostPlayer(energy)', inbuilding='$LostPlayer(inbuilding)', lastAction='$LostPlayer(lastAction)',health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+				#Important to uptade the array so other functions work correctly
+				GlobalVar::carray set LostPlayer [array get LostPlayer]
+			} 
+		}
+		#Check if user is alive.. if not show options to standup:)
+		if {![VerifyAlive $LostPlayer(health)]} {
+			#TODO show info if injected with syringe..?
+			page [Lost:lang youAreDead] {
+				web::putx {	
+					<form method="post" action="{web::put [newUrl map.ws3 StandUp]}" class="map extendedItem">
+					<? web::put [htmlInput "standUp" submit [Lost:lang standUp]]; web::put "<label>[Lost:lang cost50Energy]</label>" ?>
+					</form>
+				}
+			}
+		#switch between map & location
+		} else { 	if {$map == "map"} { displayMap } elseif { $map == "location" } { showLocation } }
+		
+	} else { 
+		page "Exhausted"  { addLabel info [Lost:lang youAreExhausted]  }
+	}
+}
+#Draws the map and remove all unnecessary info.. like info about users in this zone etc..
+proc displayMap {{extraDisplay ""}} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set skills [GlobalVar::cget skills]
+	global errors
+
+	page [Lost:lang mapTitle] {
+			#The selects should have been here IF we used server side table generation
+			array set LostPlayer [GlobalVar::carray get LostPlayer]
+			set buildings [DatabaseQuery "select BuildingsDesc.type,Buildings.status from Buildings,BuildingsDesc
+			where BuildingsDesc.id=Buildings.buildingtypeID  and Buildings.townID='$LostPlayer(townID)' ORDER BY y asc, x asc" ]
+			array set townInfo [DatabaseFetchArray "SELECT max(y) as y ,max(x) as x from Buildings,BuildingsDesc
+			where BuildingsDesc.id=Buildings.buildingtypeID  and Buildings.townID='$LostPlayer(townID)'" ]
+
+			if {$extraDisplay != ""} { uplevel $extraDisplay }
+			if {$LostPlayer(energy) <= [expr $LostPlayer(maxenergy)*0.1]} { addLabel warning [Lost:lang energyLeft $LostPlayer(energy)]  }
+			if {$LostPlayer(infected) == 1} { addLabel error [Lost:lang youAreInfected] }
+			if {[string length $errors] !=  0} { addLabel error $errors }
+		
+			web::putx {<div id="leftContent"><table id="map" cellspacing="0"><tr>}
+			set y 1; set x 1;
+			#Make the map of all the city.. using all the buildings
+			#TODO for later.. only show statuses of buildings to people having a mobile phone (with GPS for location..)
+			
+			foreach {type status} $buildings {
+				#Give current location
+				if {$x == $LostPlayer(x) && $y == $LostPlayer(y)} {
+					web::putx {<td title="<? web::put "$x,$y - $type - $status" ?>" x='<? web::put "$x" ?>' y='<? web::put "$y" ?>' class="currentLocation"></td>}	
+				} else {
+					#Specify the class for any status other than "unknown"
+					if {$status != "unknown"} {
+						set locationClass $status
+					} else { set locationClass "" }
+					web::putx {<td title="<? web::put "$x,$y - $type - $status" ?>" x='<? web::put "$x" ?>' y='<? web::put "$y" ?>'	class="<? web::put $locationClass ?>" ></td>}
+				}
+				
+				incr x
+				if {$x>$townInfo(x)} {
+					incr y ; set x 1;
+					web::put </tr><tr>
+				}
+			}
+		
+			web::putx {</table></div>	<div id="travel"></div>}
+			web::putx {<div id="rightContentMap">Extra buttons to come..</div>}
+			web::putx {
+				<table>
+				<tr>
+					<td class="currentLocation"></td><td>Your current location</td>
+					<td class="powered"></td><td>Generator powered building</td>
+					<td class="active"></td><td>Building with generator but no fuel</td>
+				</tr>
+				<tr>
+					<td class="ruined"></td><td>Ruined building..</td>
+					<td class="occupied"></td><td>Building occupied by zombies</td>
+					<td class="quest"></td><td>Your active quest</td>
+				</tr>
+				</table>
+			}
+		#ShowStats used to be here, maybe commercials?
+	} {
+		
+		$( "#travel" ).dialog({
+			autoOpen: false,
+			resizable:false,
+			draggable: false,
+			title: "Travel to location",
+			width: 200,
+			opacity: 0.5,
+		});
+	
+		$('#map td').click(function(event) {
+		
+			$('#travel').dialog('close');
+
+			var myX = $('.currentLocation').attr('x');
+			var myY = $('.currentLocation').attr('y');
+			var locX =  $(this).attr('x');
+			var locY = $(this).attr('y');
+			$('#travel').dialog({
+				position:	[event.clientX-50,event.clientY-50],
+			}).html('<p>Traveling to <b>' + locX + ',' + locY + '</b> will cost <b> ' + Math.round(Math.sqrt(Math.pow((myX-locX),2)+Math.pow((myY-locY),2)))  +  ' </b>energy</p>')
+			.append('<form method="post" action="<?web::put [newUrl map.ws3 move]?>" style="text-align:center;"><div><input type="hidden" name="movex"  value="'+ locX +'"  /><input type="hidden" name="movey"  value="'+ locY +'"  />	<input type="submit" name="travel" class="travelButton" value="<? web::put [Lost:lang travel] ?>" /><br/><input type="submit" name="location" class="travelButton" value="<? web::put [Lost:lang goToLocation] ?>"  /></div></form>');
+			$('.travelButton').button();
+			$('#travel').dialog('open');	
+		})
+		
+		$('#map td').hover(function() { $(this).addClass('hover'); },function() { $(this).removeClass('hover'); })
+		$('td[title]').tooltip({
+			 position: "bottom right",
+			 opacity: 0.9,
+			 delay:0,
+		});
+
+	}
+}
+
+#Show the location of the user, show all the details that used to be in DisplayMap
+proc showLocation {{extraDisplay ""} {extraJquery ""}} {
+	#Select accurate data
+	SelectThingsNeeded
+		
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	array set Building [GlobalVar::carray get Building]
+	set skills [GlobalVar::cget skills]
+	
+	page [Lost:lang locationTitle] {
+		
+		#TODO..
+		#	if  {[string match -nocase "*diagnosis*" $skills]} { set seeHp 1  } else { set seeHp 0 }
+		if {$extraDisplay != ""} { uplevel $extraDisplay }
+		web::put {<div id="leftContent">}
+		if {$LostPlayer(inbuilding) == 1} {		web::put "[MapBuildingImage inside]</div>"  } else {	web::put "[MapBuildingImage $Building(type)]</div>" }
+		web::put {<div id="rightContent">}
+		web::put {<div id="ajaxdiv"></div>}
+		BuildingInfo
+		DisplayLogMessages
+		PossibleActions
+		showUsers
+
+		#TODO put images in corners.. so you can move.. 
+		#ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only
+
+		set locationList {nw -1 -1 n 0 -1 ne 1 -1 w -1 0 view 0 0 e 1 0 sw -1 1 s 0 1 se 1 1}
+		web::putx {
+			<form method="post" action="<?web::put [newUrl map.ws3 move]?>" style="display:inline;">
+				<div>
+				<input type="hidden" name="movex" id="movex" />	<input type="hidden" id="movey" name="movey"   />
+		}
+		foreach {loc x y}  $locationList {
+			incr td
+			if {$td>3} { set td 1;  web::put "<br/>" }
+			if {$loc == "view"} {
+				web::put {	 	<a href="#" class="uibutton ui-icon ui-icon-search"></a>  }
+			} else {
+				set newx [expr {$x+$LostPlayer(x)}]
+				set newy [expr {$y+$LostPlayer(y)}]
+				set newUrl [newUrl map.ws3 moveToLoc movex $newx movey $newy]
+				web::putx {
+					<a href="<? web::put  $newUrl ?>" title="Move to <? web::put  $newx,$newy ?>"  alt="Move to <? web::put  $newx,$newy ?>" class="uibutton ui-icon ui-icon-triangle-1-<? web::put $loc ?>"><? web::put $loc ?></a>				}
+			}
+		}
+	
+		web::put {</div></form>
+		</div>}
+	} {
+		<?
+			upvar extraJquery extraJquery
+			if {$extraJquery != ""} { web::putx $extraJquery }
+		?>
+		$('#refresh-user-list').toggle(
+			function() {
+				$('#refresh-user-list span').html('<? web::put [Lost:lang refresh] ?>');
+				loadingAjax('#user-list','GET','<? web::put [newUrl map.ws3 getUsers ajax load] ?>') 
+			},
+			function() {
+				$('#refresh-user-list span').html('<? web::put [Lost:lang showAllUsers] ?>');
+				loadingAjax('#user-list','GET','<? web::put [newUrl map.ws3 getUsers ajax load] ?>') 
+			}
+		);
+
+	
+	}
+}
+
+#TODO.. move attacks for users to the user page...:) and or when clicking on the person next to you..?
+proc PossibleActions {} {
+	#get the variables
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	array set Building [GlobalVar::carray get Building]
+	set skills [GlobalVar::cget skills]
+
+	#Enter & Exit building
+	web::putx {	<p>Some possible actions:</p>}
+	if {![string match -nocase "*${Building(type)}*" "Park Rubble Street cemetery"]} {
+		web::putx { <form method="post" action="<?web::put [newUrl map.ws3 enterBuilding]?>" > }
+		if {$LostPlayer(inbuilding) == 0} { web::put [htmlInput "enter" submit [Lost:lang enterBuilding] class="uibutton"] } else { web::put [htmlInput "enter" submit [Lost:lang exitBuilding] class="uibutton"]  } 
+		web::put "</form>"
+	}
+	#Search in building Everything is done in search.ws3
+	if {$LostPlayer(inbuilding)==1 || [string match -nocase "*${Building(type)}*" "Rubble park"]} {
+		web::putx {
+			<div id="searchDialog">
+				<? web::put [Lost:lang searchItems] ?><br/>
+	
+			</div>
+		
+					
+			<? web::put "<a href='#' id='opensearch'>[Lost:lang searchItems]</a>" ?>
+			<script>
+				$( "#searchDialog" ).dialog({
+					autoOpen: false,
+					title: '<? web::put [Lost:lang searchItems] ?>',
+					buttons: {
+						"<? web::put [Lost:lang searchItems] ?>": function() {
+							loadingAjax('#searchDialog','GET','<? web::put [newUrl search.ws3 searchItems] ?>');
+							$( "#searchDialog" ).dialog({
+								buttons: {
+									"<? web::put [Lost:lang searchAgain] ?>": function() {
+										loadingAjax('#searchDialog','GET','<? web::put [newUrl search.ws3 searchItems] ?>');	}	
+								}
+							});
+						}
+					}
+				});
+				$('#opensearch').click(function() {
+					$( "#searchDialog" ).css('textAlign','center').dialog("open");
+				}).button();
+	
+			</script>
+		}
+	}
+#View all attack possibilities
+	web::putx {
+
+		<a href="#" id="openattack"class="uibutton"><? web::put [Lost:lang attackOptions] ?></a>
+		<div id="attackDialog">
+		</div>
+		<script>
+		/*
+		$( "#attackDialog" ).dialog({
+			autoOpen: false,
+			title: '<? web::put [Lost:lang attackStuff] ?>',
+			buttons: {
+				"<? web::put [Lost:lang attack] ?>": function() {
+					loadingAjax('#searchDialog','GET','<? web::put [newUrl search.ws3 searchItems] ?>');
+					
+					$( "#searchDialog" ).dialog({
+						buttons: {
+							"<? web::put [Lost:lang searchAgain] ?>": function() {
+								loadingAjax('#searchDialog','GET','<? web::put [newUrl search.ws3 searchItems] ?>');	}	
+						}
+					});
+					
+				}
+			}
+		});
+		*/
+		$('#openattack').click(function() {
+		//	$( "#attackDialog" ).css('textAlign','center').dialog("open");
+			loadingAjax('#attackDialog','GET','<? web::put [newUrl combat.ws3 viewattack] ?>');	
+		}).button();
+		</script>
+	}
+	
+	#Barricade Building
+	if {[string match -nocase "*Construction*" $skills] && $Building(damage) > 20 && $Building(barricades) < 100 && $LostPlayer(inbuilding) == 1 && ![string match -nocase "*${Building(type)}*" "Park Rubble Street Cemetery"]} {
+		web::putx {	
+			<form method="post" action="<?web::put [newUrl map.ws3 Barricade]?>" >
+			<?web::put [htmlInput "barricade" submit [Lost:lang barricadeBuilding] class="uibutton"]?>
+			</form>
+		}
+	}
+	#Barricade if you have Junk For Barricading
+	set itemExists [DatabaseQuery "Select itemID from ItemsDesc where  name='Barricading junk'"]
+	if {$itemExists!= "" && $Building(damage) > 20 && $Building(barricades) < 100 && $LostPlayer(inbuilding) == 1 && ![string match -nocase "*${Building(type)}*" "Park Rubble Street Cemetery"]} {
+		web::putx {	
+			<form method="post" action="<?web::put [newUrl map.ws3 Barricade withJunk yes]?>" >
+			<?web::put [htmlInput "barricade" submit [Lost:lang barricadeBuildingJunk] class="uibutton"]?>
+			</form>
+		}
+	}
+	#Repair Building
+	if {[string match -nocase "*Construction*" $skills] && $Building(damage) < 100 && ![string match -nocase "*${Building(type)}*" "Park Rubble Street Cemetery"]}  {
+		web::putx {	
+			<form method="post" action="<?web::put [newUrl map.ws3 RepairBuilding]?>" >
+			<? web::put [htmlInput "repair" submit [Lost:lang repairBuilding] class="uibutton"]?>
+			</form>
+		}
+	}
+	
+	
+	#Talk to people (in- or outside buildings)
+	web::putx {
+		<form method="post" action="<?web::put [newUrl map.ws3 SetLocalMsg]?>" >
+		<input type="text" name="message" style="width:200px" />
+		<? web::put [htmlInput "localMsg" submit [Lost:lang saySomething] class="uibutton"] ?>
+		</form>
+	}
+	#Drag corpses outside
+	set deadInside [GlobalVar::cget deadInside]
+	if {$deadInside > 0 && $LostPlayer(inbuilding) == 1} {
+	web::putx {	<form method="post" action="<?web::put [newUrl map.ws3 DragCorpses]?>" >
+		<?web::put [htmlInput "Drag" submit [Lost:lang dragCorpseOut] class="uibutton"]?></form>}	
+	}
+	
+	#TODO remove this
+	# ViewAttack
+	#Make stuff
+
+}
+
+
+#############
+#Buildings
+#############
+proc Barricades {level} {
+	if {$level >=1 && $level <=24} { return [Lost:lang simpleBarricades] }
+	if {$level >=25 && $level <=49} { return [Lost:lang advancedBarricades]  }
+	#Entering building requires 2 Energy
+	if {$level >=50 && $level <=74} { return [Lost:lang extremeBarricades]  }
+	#Not possible to enter, Exitiing building requires 1 xp
+	if {$level >=75 && $level <=100} { return [Lost:lang inaccesibleBarricades]  }
+}
+proc BuildingDamage {level} {
+	if {$level >= 100} { return [Lost:lang buildingNotDamaged] }
+	if {$level >= 30 && $level < 100} { return [Lost:lang buildingIsDamaged]  }
+	if {$level < 30} { return [Lost:lang buildingIsRuined]  }
+}
+proc InBuilding {inside} {
+	if {$inside ==0} { return [Lost:lang outside] } else { return [Lost:lang inside]  }
+}
+proc BuildingInfo {} {
+	set username [Session::cget username]
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	array set Building [GlobalVar::carray get Building]
+
+	if {![string match -nocase "*${Building(type)}*" "Park Rubble Street Cemetery"]} {
+		#hasTransciever INT DEFAULT 0, generatorTime
+		set Generator ""
+		if {$Building(hasGenerator) > 5} { 
+			append Generator [Lost:lang portableGeneratorHere] 
+		} elseif {$Building(hasGenerator) < 5 && $Building(hasGenerator) > 0} { append Generator [Lost:lang damagedPortableGeneratorHere]  }  
+		
+		if {$Building(generatorTime) > 0 && $Building(hasGenerator) > 0} {
+			append Generator [Lost:lang generatorPower] 
+			set PoweredBuilding [Lost:lang generatorPowerInside] 
+			if {$Building(generatorTime) < 10} { append Generator [Lost:lang generatorLowFuel]  }
+			if {$Building(hasTransciever) > 0} { append Generator [Lost:lang transcieverPower] }
+		} else { set PoweredBuilding "" }
+		
+		addLabel info "[InBuilding $LostPlayer(inbuilding)]  <span class=\"bold\">$Building(type)</span>.
+		[BuildingDamage $Building(damage)]  [Barricades $Building(barricades)]. <br/> [ expr {$LostPlayer(inbuilding)==1? $Generator : $PoweredBuilding }]"
+	} else	{ addLabel info "You are in the $Building(type). " } 
+}
+proc showUsers {{ajax ""}} {
+	
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set theDead [DatabaseQuery "select LostPlayers.Status from Buildings,LostPlayers where LostPlayers.Status!='Alive' and (Buildings.x=LostPlayers.x and Buildings.y=LostPlayers.y) and (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and (Buildings.townID='$LostPlayer(townID)' and Buildings.townID=LostPlayers.townID) and LostPlayers.inbuilding='$LostPlayer(inbuilding)' AND NOT LostPlayers.username='$LostPlayer(username)')"]
+	if {$ajax == "load"} {
+	set players	[DatabaseQuery "select LostPlayers.userID,LostPlayers.username,LostPlayers.health,LostPlayers.maxHealth from Buildings,LostPlayers
+		WHERE LostPlayers.Status='Alive' and (Buildings.x=LostPlayers.x and Buildings.y=LostPlayers.y) and (Buildings.x='$LostPlayer(x)'
+		and Buildings.y='$LostPlayer(y)' and (Buildings.townID='$LostPlayer(townID)' and Buildings.townID=LostPlayers.townID)
+		and LostPlayers.inbuilding='$LostPlayer(inbuilding)' AND NOT LostPlayers.username='$LostPlayer(username)')"]
+	} else { 	set players [GlobalVar::cget players] }
+	array set Building [GlobalVar::carray get Building]
+	set skills [GlobalVar::cget skills]
+	set peopletext "<p>[Lost:lang noOneHere]</p>"
+	if {$players != ""} { 
+		set upperbound [expr {([llength $players] -1)}]
+		if {$upperbound==0} { set peopletext "<p>[Lost:lang sittingLonely]</p>" } else { set peopletext "<p>[Lost:lang somePeopleHere]  &nbsp;<a href='#' class='uibutton' id='refresh-user-list'>[Lost:lang showAllUsers] </a></p>" }
+		if  {[string match -nocase "*diagnosis*" $skills]} { set seeHp 1  } else { set seeHp 0 }
+
+		foreach {userID username hp maxhp} $players {
+			if {$seeHp==1} { set userinfo "$username ($hp/$maxhp hp)" } else { set userinfo $username }
+			append playerList " <a href=\"#\" class=\"player-profile\" userID=\"$userID\" username=\"$username\">$username</a> "
+		}
+		set PeopleOutside "$playerList" 
+	} else { set PeopleOutside [Lost:lang noOneHere] }
+	
+	set dead 0; set zombies 0;
+	foreach status $theDead {
+		if {$status == "Zombie"} {
+			incr zombies
+		} else { incr dead}
+	}
+	if {$zombies > 0} { append PeopleOutside [Lost:lang ZombiesHere $zombies]  ; GlobalVar::cappend players " Zombie" }
+	if {$dead > 0} { 
+		append PeopleOutside [Lost:lang deadHere $dead] 
+		GlobalVar::cset deadInside 1
+	}
+	append PeopleOutside { <script> playerProfiles(); </script> }
+	if {$ajax != "load"} {
+		web::put "$peopletext"
+		web::putx {<div id="user-list" style="padding:3px; line-height:1.3em;" class="ui-widget ui-state-highlight ui-corner-all"> <? web::put $PeopleOutside ?> </div> }
+	} else {
+		web::putx {
+			var serverObj = {   <? simpleObject html $PeopleOutside  ?>  } 
+		}
+	}
+}
+proc MapBuildingImage {buildingType} {
+	regsub {\s} $buildingType "" buildingImage
+	return "<img style=\"width: auto; height:auto;\" src=\"./images/buildings/${buildingImage}.jpg\" title=\"$buildingType\" />"
+}
+
+
+#@TODO Login redirect after cleanup of script
+
+proc enterBuilding {} {
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	#Handle Barricades & entering a building..
+	#If zombie, can't enter barricaded buildings!
+	array set Building [DatabaseFetchArray "select y,x,status,barricades,damage from Buildings where (x='$LostPlayer(x)' and y='$LostPlayer(y)') and Buildings.townID='$LostPlayer(townID)'"]
+	if {[VerifyEnergy $LostPlayer(energy) 1]} { incr LostPlayer(energy) -1 }
+	if {$LostPlayer(inbuilding) == 0} { 
+		if {$LostPlayer(status) == "Zombie"} {
+		#TODO control if zombie has memory of life... he can open doors!
+			if {$Building(barricades) > 1} {
+				append errors [Lost:lang zombieCannotEnterBarricades]
+			} else { set LostPlayer(inbuilding) 1 }
+		} else {
+			if {$Building(barricades) > 75} { 
+				append errors  [Lost:lang  cannotEnterExtremeBarricaded]
+			} elseif {$Building(barricades)>=25 &&  $Building(barricades) <=74} {
+				set LostPlayer(inbuilding) 1; incr LostPlayer(energy) -1
+			} else { set LostPlayer(inbuilding) 1 }
+		}	
+	} else {
+		set LostPlayer(inbuilding) 0
+	}
+	if {[string length $errors] ==  0} {
+		if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+		set LostPlayer(lastaction) [unixtime]
+		DatabaseExec "UPDATE LostPlayers SET inbuilding='$LostPlayer(inbuilding)', energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastaction)',health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+		#Save things we might have changed
+		GlobalVar::carray set LostPlayer [array get LostPlayer]
+		showLocation  
+	} else { showLocation { addLabel error $errors }  }
+}
+#Still needs modifying
+proc DragCorpses {} {
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set dragOutside [web::formvar dragOutside]
+	#Use the same ammount of energy even if building is barricaded... Don't make it too complex!
+	set theDead [DatabaseQuery "select LostPlayers.Username from Buildings,LostPlayers where LostPlayers.Status='Dead' and (Buildings.x=LostPlayers.x and Buildings.y=LostPlayers.y) and (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and (Buildings.Town='$LostPlayer(town)' and Buildings.townID=LostPlayers.townID) and LostPlayers.inbuilding=1 AND NOT LostPlayers.username='$LostPlayer(username)')"]
+	if {$theDead == ""} { append errors "There seems to be no body to drag... outside" }
+	if {[VerifyEnergy $LostPlayer(energy) 3]} { incr LostPlayer(energy) -3 }
+	
+	if {[string length $errors] ==  0} {
+		set LostPlayer(lastAction) [unixtime]
+		if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+		DatabaseExec "UPDATE LostPlayers SET inbuilding=0 where username='[lindex $theDead 0]'" 
+		DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastAction)', exp=exp+2,health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+		showLocation { addLabel success "You've dragged one corpse outside." }
+		GlobalVar::carray set LostPlayer [array get LostPlayer]
+	} else {
+		 showLocation {
+			addLabel error $errors
+		 } {
+			bubble('error','<? upvar errors errors; web::put [::xhtml::removequotes  $errors] ?>',7000)
+		 }
+	}
+}
+
+proc Barricade {} { 
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	#TODO control if there are any zombies inside, if so don't barricade!
+	set withJunk [web:post withJunk]
+	
+	if {$withJunk == "yes"} {
+		set itemExists [DatabaseQuery "Select Items.id from Items,ItemsDesc where  Items.itemID=ItemsDesc.itemID and Items.userID='$Lostlayer(userID)'and ItemsDesc.name='Barricading junk' LIMIT 1"]
+		if {$itemExists == ""} { append errors [Lost:lang items_dontHave] }
+	} else {	
+		set skill [SelectSkill Construction]
+		if {$skill != "Construction"} { append errors  [Lost:lang barricadeConstructionSkill] }
+	}
+	
+	if {[VerifyEnergy $LostPlayer(energy) 3]} {
+		if {$withJunk == "yes"} {
+			incr LostPlayer(energy) -3
+		} else {
+			incr LostPlayer(energy) -1
+		}
+	 	array set Building [DatabaseFetchArray "select barricades,damage from Buildings WHERE (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.townID='$LostPlayer(townID)')"]
+		if {$Building(barricades) <= 30 &&  $Building(damage) >= 20  && $LostPlayer(inbuilding) == 1} {
+			set items {bookcase cabinet chest sideboard chair couch sofa desk table "small bed" hi-fi piano television toaster microwave mop vacuum "ironing board"}
+			set item [lindex $items [rnd 0 [expr [llength $items]-1]]]
+			
+			set successMsg [Lost:lang junkToBarricade] ;# [boldSpan $item]
+			set LostPlayer(lastAction) [unixtime]
+			set barricadeChance [rnd 1 100]
+
+			if {$Building(barricades) <=24} { set levelChance 90 }
+			if {$Building(barricades) >=25 && $Building(barricades) <=49} { set levelChance 80 }
+			if {$Building(barricades) >=50 && $Building(barricades) <=74} { set levelChance 70 ; append successMsg [Lost:lang blockingEntranceBarricades]   }
+			if {$Building(barricades) >=75 && $Building(barricades) <=100} { set levelChance 60 }			
+			if {$barricadeChance > $levelChance} { append errors [Lost:lang failedBarricading] } else { incr LostPlayer(exp) 1 }
+			
+		} else { append errors  [Lost:lang buildingInRuinsOrFull]  }
+		if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+	}
+	
+	if {[string length $errors] ==  0} {
+		DatabaseExec "UPDATE Buildings SET barricades=barricades+1 where (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.townID='$LostPlayer(townID)')"
+		showLocation { addLabel success $successMsg }
+		GlobalVar::carray set LostPlayer [array get LostPlayer]
+		if {$withJunk == "yes"} {
+			DatabaseExec "DELETE FROM Items WHERE id='$itemExists';"
+		}
+	} else {
+		 showLocation {
+			addLabel error $errors
+		 } {
+			bubble('error','<? upvar errors errors; web::put [::xhtml::removequotes  $errors] ?>',7000)
+		 }
+	}
+	DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastAction)', exp='$LostPlayer(exp)',health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+}
+
+proc RepairBuilding {} {
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	#TODO control if user has construction skill
+	
+	set skill [SelectSkill Construction]
+	if {$skill != "Construction"} { append errors [Lost:lang cantRepairWithoutSkill] } else {
+
+		if {[VerifyEnergy $LostPlayer(energy) 2]} {
+			incr LostPlayer(energy) -1
+			array set Building [DatabaseFetchArray "select barricades,damage from Buildings WHERE (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.townID='$LostPlayer(townID)')"]
+			if {$Building(damage) < 100} {
+				#Do some different things... make it more random
+				set repairChance [rnd 1 100]
+				if {$repairChance == 33} {
+					#Do something special..?
+				} elseif {$repairChance <  50} { 
+					append errors  [Lost:lang buildingRepairFailed]
+				} else {
+					incr LostPlayer(exp) 1 
+				}
+			} else { append errors [Lost:lang buildingFullyRepaired]  }
+			set LostPlayer(lastAction) [unixtime]
+			if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+		}
+	}
+	
+	if {[string length $errors] ==  0} {
+		DatabaseExec "UPDATE Buildings SET damage=damage+1 where (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.townID='$LostPlayer(townID)')"
+		displayMap { addLabel success  [Lost:lang repairedBuilding]  }
+		#GlobalVar::carray set LostPlayer [array get LostPlayer]
+	} else { displayMap }
+	DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastAction)', exp=$LostPlayer(exp),health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+
+}
+#TODO- remove it - not used anymore..
+proc SwitchDoor {} {
+	global errors
+	set opendoor [web:post opendoor]
+	set closedoor [web:post closedoor]
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	
+	if {[VerifyEnergy $LostPlayer(energy) 1]} {
+		incr LostPlayer(energy) -1
+	 	array set Building [DatabaseFetchArray "select barricades,damage from Buildings WHERE (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.Town='$LostPlayer(town)')"]
+
+		if {$Building(barricades) == 0 && $closedoor != ""} {
+			set door 1 ; set doorStatus "closed"
+		} elseif {$Building(barricades) == 1 && $opendoor != ""} { 
+			set door 0 ; set doorStatus "opened"
+		} else { append errors "The doors are barricaded, you can't open them!<br/>" }
+		if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+	}
+	if {[string length $errors] ==  0} {
+		set LostPlayer(lastAction) [unixtime]
+		GlobalVar::carray set LostPlayer [array get LostPlayer]
+		DatabaseExec "UPDATE Buildings SET barricades='$door' where (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.Town='$LostPlayer(town)')"
+		displayMap { addLabel success "You've $doorStatus the door." }
+	} else { displayMap }
+	DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastAction)', health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+	
+}
+proc StandUp {} {
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	if {[VerifyEnergy $LostPlayer(energy) 50]} {
+		#|| $LostPlayer(health) != 0
+		#if {$LostPlayer(status) != "Dead"} 
+		if {$LostPlayer(status) != "Dead" || $LostPlayer(health) != 0)} { 
+			append errors  [Lost:lang youAreNotDead] 
+		} else {
+		#TODO if used zombie revival syringe, make him human
+			if {$LostPlayer(revived)>0} {
+				set message  [subst [Lost:lang youAreRevived] ]
+				set LostPlayer(status) Alive
+				incr LostPlayer(revived) -1
+			} else {
+				set message [Lost:lang standUpAsZombie]
+				set LostPlayer(status) Zombie
+			}
+			
+			incr LostPlayer(energy) -50
+			set LostPlayer(health) 70
+		} 
+	}
+	if {[string length $errors] ==  0} {
+		set LostPlayer(lastAction) [unixtime]
+		DatabaseExec "UPDATE LostPlayers SET status='$LostPlayer(status)',energy='$LostPlayer(energy)',health='$LostPlayer(health)',revived='$LostPlayer(revived)',infected=0 WHERE username='$LostPlayer(username)'"
+
+		GlobalVar::carray set LostPlayer [array get LostPlayer]
+		showLocation { addLabel success "$message" } {
+				 <?
+				global message
+				
+			 ?>
+			 bubble('success','<? web::put $message ?>')
+		}
+	} else { showLocation { addLabel error $errors } }
+}
+proc SetLocalMsg {} {
+	global errors
+	set msg [string trim [web:post message]]
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	if {[string length $msg] == 0} { append errors  [Lost:lang youwantedtospeak ] }
+	if {[string length $msg] > 250} { append errors  [Lost:lang typemaxcharacters 250] }
+	if {[VerifyEnergy $LostPlayer(energy) 1]} {
+		incr LostPlayer(energy) -1
+	}
+	if {[string length $errors] ==  0} {
+		#Update & write message
+		set time [unixtime]
+		set LostPlayer(lastAction) $time
+		DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastAction='$LostPlayer(lastAction)' WHERE username='$LostPlayer(username)'"
+		DatabaseExec "INSERT INTO LocalMsg (fromUser,inbuilding,townID,x,y,msg,msgTime) VALUES('$LostPlayer(userID)','$LostPlayer(inbuilding)','$LostPlayer(townID)','$LostPlayer(x)','$LostPlayer(y)','$msg','$time')"
+		showLocation { addLabel success [boldSpan [Lost:lang yousaid $msg] }
+		GlobalVar::carray set LostPlayer [array get LostPlayer]
+	} else { showLocation }
+}
+#############
+#Dispatching commands
+#############
+web::command default {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		MapMovement
+		SaveSession
+	}
+}
+web::command moveToLoc {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		set movex [web:get movex]
+		set movey [web:get movey]
+		MapMovement $movex $movey "location"
+		SaveSession
+	} 
+}
+web::command move {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		set movex [web:post movex]
+		set movey [web:post movey]
+		if {[web:post location] != ""} {
+			set map location
+		} elseif {[web:post travel] != ""} {
+			set map map
+		} else { set map "cheating" }
+		
+		MapMovement $movex $movey $map
+		SaveSession
+	} 
+}
+web::command getUsers {
+	if {![IsAuthenticated]} {
+		web::put "Oops, not logged in..."
+	} else  {
+		showUsers [web:get ajax]
+		SaveSession
+	} 
+}
+web::command location {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		showLocation
+		SaveSession
+	} 
+}
+web::command enterBuilding {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		enterBuilding
+		SaveSession
+	} 
+}
+web::command DragCorpses {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		DragCorpses
+		SaveSession
+	} 
+}
+
+web::command Barricade {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		Barricade
+		SaveSession
+	} 
+}
+
+web::command RepairBuilding {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		RepairBuilding
+		SaveSession
+	} 
+}
+
+web::command SwitchDoor {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		SwitchDoor
+		SaveSession
+	} 
+}
+web::command StandUp {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		StandUp
+		SaveSession
+	} 
+}
+web::command SetLocalMsg {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		SetLocalMsg
+		SaveSession
+	} 
+}
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+
+

@@ -1,0 +1,4 @@
+RewriteEngine on
+RewriteBase /lba
+RewriteRule ^wiki/([^/\.]+)/?$ wiki.ws3?page=$1 [R]
+RewriteRule ^home\.ws3$ index.ws3

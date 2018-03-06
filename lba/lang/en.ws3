@@ -1,0 +1,391 @@
+# Life Beyond Apocalypse language file
+# English by Andrei
+
+global Lang
+#Menu Items & others
+array set Lang {
+	map 			Map
+	location		Location
+	profile			Profile
+	players 		Players
+	mobileMail 		"Mobile"
+	manufacturing	Manufacturing
+	skills 			Skills
+	settings		Settings
+	chat			"Chat Now"
+	adminPanel		"[Admin Panel]"
+	index			"Main Page"
+	statistics		"Game Statistics"
+	wiki			"Wiki/Help"
+	login			Login
+	logout			"Log out"
+	register		Register
+	
+	credits			Credits
+	gameRules		"Game rules"
+
+	energy			Energy
+	experience		Experience
+	encumbrance		Encumbrance
+	health			Health
+	status			Status
+	level 			Level
+	warnlvl			"Warn Level"
+	town			Town
+	clan			Clan
+	weight			Weight
+	foodLevel		"Food level"
+	waterLevel		"Water level"
+		
+	onlinePlayers	"Online Players"
+
+	enterText "Enter text"
+	restrictedAccess "Restricted Access - You are not allowed here. You do not have the required level to access this page. This attempt has been logged!"
+	expiredSession "Either you aren't allowed to login, or your session/cookie has expired. Please login again."
+	logoutOk "Logout successful. Thanks for playing, come back anytime"
+
+	created "Created"
+	lastAction "Your last action at"
+	revivedwithsyringe "Survival syringes injected in yourself now"
+	killcount "Total kills"
+	deathcount "Total deaths"
+
+	yes yes
+	no no
+	image Image
+	showAllUsers "Show all"
+	noItems "You don't have any items with you:("
+}
+#General things
+array set Lang {
+	hp	hp
+	by	by
+	outside {You are <span class="bold">outside</span>}
+	inside {You are <span class="bold">inside</span>}
+	attack Attack
+	theBuilding "the building"
+	theBarricades "the barricades"
+	times times
+	self self
+	with with
+	fillAllFields "Please fill in all fields, come on it's not rocket science!<br/>"
+}
+
+#Items Page
+array set Lang {
+	items_cantDrop "You can't drop something you don't have!"
+	items_droppedOk "You have dropped"
+	items_dontHave "You can't really use something you don't have"
+	items_youveUsed "You have used"
+	items_healedYourInfection "You've healed your infection!"
+	items_youHealed "You healed"
+	items_youBeenHealed "You've been healed"
+	items_healedYourself "You've healed yourself"
+	items_reloadedPistol "You have reloaded your Pistol."
+	items_dontHavePistolClip "You don't have any pistol clip to reload your Pistol."
+	items_useAllBullets "You have to use all the bullets before you reload your pistol."
+	items_reloadedShotgun "You have reloaded your shotgun."
+	items_dontHaveShells "You don't have any Shotgun Shells to reload your Shotgun."
+	items_useAllShells "You have to use all the shells before you reload your shotgun."
+	items_refuledChainsaw "You have refueled your Chainsaw."
+	items_noFuelCanForChainsaw "You don't have any Fuel Canister in your inventory to refuel your chainsaw."
+	items_chainsawNotEmpty "Your chainsaw is not empty."
+	items_bookKnowledge "While reading this book you gain some new knowledge."
+	items_bookRubbish "This book is rubbish, you already know what you've read."
+	items_bookFinished "You finished reading this book."
+	items_buildingHasGenerator "This building seems to already have a Generator in it, try rebuilding or refuling it first!"
+	items_skillForGenerator "You need to have the Electrical equipment skill to be able to use a Generator"
+	items_beInsideForItem "You must be inside to place a %s!<br/>"
+	items_someoneSetupGenerator "has set up a Portable generator in the building. It will last for aproximatively 24 hours, someone needs to refuel it."
+	items_youSetupGenerator "You've set up a Portable generator in the building. It will last for aproximatively 24 hours, someone needs to refuel it."
+	items_notWorkingYet	"This is not working yet:)!"
+	items_noTranscieverInBuilding  "This building seems to already have a Transmitter in it.<br/>"
+	items_skillForTransciever "You need to have the Electrical equipment skill to be able to use a Radio Transmitter!"
+	items_someoneSetupTransciever "has set up a Radio Transmitter in the building."
+	items_youSetupTransciever "You've set up a Radio Transmitter in the building."
+	items_noGeneratorToRefuel "There is no generator in this building to refuel!<br/>"
+	items_noCarToRefuel "You don't see any car to refuel it. You need to be inside to refuel a Generator.<br/>"
+	items_someoneRefuledGenerator "has refueled the Portable generator. It will last for aproximatively 72 hours."
+	items_someoneRefuledGenerator  "You've refueled the Portable generator. It will last for aproximatively 72 hours."
+	items_antidoteCuredYou   "You've used an antidote. Your infection has now been cured."
+	items_functionInAlpha    "This function is currently in alpha stage.. Not all items can  be used atm. Try another item" 
+}
+#Complete list of items
+array set Lang {
+	punch  "Punch"
+	bite  "Bite"
+	hands  "Hands"
+	wine  "Wine"
+	toolbox  "Toolbox"
+	wood  "Wood"
+	spareparts  "Spare Parts"
+	nylon  "Nylon"
+	cottontifon  "Cotton Tifon"
+	medicinalherbs  "Medicinal Herbs"
+	labliquids  "Lab Liquids"
+	chemicals  "Chemicals"
+	gasmask  "Gas Mask"
+	helmet  "Helmet"
+	crowbar  "Crowbar"
+	pistolclip  "Pistol Clip"
+	shotgunshells  "Shotgun Shells"
+	labequipment  "Lab Equipment"
+	fuelcanister  "Fuel Canister"
+	radio  "Radio"
+	radiotransmitter  "Radio Transmitter"
+	portablegenerator  "Portable Generator"
+	book  "Book"
+	orthodoxbible  "Orthodox Bible"
+	newspaper  "Newspaper"
+	journalandpen  "Journal and Pen"
+	battery  "Battery"
+	binoculars  "Binoculars"
+	flaregun  "Flare Gun"
+	mobilephone  "Mobile Phone"
+	firstaidkit  "First Aid Kit"
+	antidote  "Antidote"
+	trap  "Trap"
+	bomb  "BOMB"
+	watercanister  "Water Canister"
+	waterbottle  "Water Bottle"
+	canfood  "Can Food"
+	driedfood  "Dried Food"
+	emptysyringe  "Empty Syringe"
+	survivalsyringe  "Survival Syringe"
+	zombierevivallabmixture  "Zombie Revival Lab Mixture"
+	poolcue  "Pool Cue"
+	baseballbat  "Baseball Bat"
+	knife  "Knife"
+	axe  "Axe"
+	kantana  "Kantana"
+	pistol  "Pistol"
+	shotgun  "Shotgun"
+	chainsaw  "Chainsaw"
+	taser  "Taser"
+	flakjacket  "Flak jacket"
+	backpack "Back pack"
+	barricadingjunk "Junk usefull for barricading"
+	booze "Booze"
+	radiationsuite  "Radiation Suite"
+	refresh "Refresh"
+	zombiescantuseitems "As a zombie you can't use the items you have!"
+	useItem "Use item"
+}
+#Map & functions
+array set Lang {
+	youHaveNoEnergy "<br/> You don't have anymore energy for this task... Please try later when you feel blood in your veins."
+	travelLongDistanceWithoutClicking "Now, how did you get that ideea? Trying to travel a long distance without clicking on the next building? <br/>"
+	youAreExhausted "You are exhausted from everything you did, you don't have anymore energy.. you just fall asleep. come back when you have more energy left. Normally you get 10 energy per hour."  
+	youAreDead "You are dead, you can't do anything...<br/>" 
+	mapTitle "Map - full map of the city"
+	locationTitle "Location "
+	youAreInfected "Your are feeling dizzy can it be a cold? You are infected, every energy use takes 1 hp."
+	standUp	"Stand Up"
+	cost50Energy "This costs 50 energy"
+	energyLeft "Only %s energy left!"
+	enterBuilding  "Enter building"
+	exitBuilding  "Exit building"
+	searchItems "Search for usefull items"
+	closeDoor "Close door"
+	openDoor "Open door"
+	barricadeBuilding "Barricade building"
+	barricadeBuildingJunk "Barricade with Junk"
+	repairBuilding "Repair Building"
+	saySomething "Say something"
+	dragCorpseOut "Drag corpse outside"
+
+	doorIsOpen "The door is wide open."
+	doorIsClosed "The door has been closed."
+	simpleBarricades "You see some <span class=\"bold\">simple</span> barricades."
+	advancedBarricades "You see some <span class=\"bold\">advanced</span> barricades."
+	extremeBarricades "You see it has been <span class=\"bold\">extremely</span> barricaded."
+	inaccesibleBarricades "You see it <span class=\"bold\">unaccesible</span> barricaded."
+
+	buildingNotDamaged "The building is in great shape."
+	buildingIsDamaged {The building is <span class="bold">damaged</span>.}
+	buildingIsRuined {The building is in <span class="bold">ruins</span> (needs to be repaired before it can be used).}
+
+	sittingLonely "Sitting here lonely"
+	somePeopleHere "The following people are here:"
+	noOneHere "There seems to be no one here."
+	ZombiesHere "<br/>There are %s zombies lurking around."
+	deadHere "<br/>There are %s dead corpses rotting here."
+	portableGeneratorHere {A [boldSpan "portable Generator"] has been setup here.}
+	damagedPortableGeneratorHere  {A [colorSpan damaged red] [boldSpan "portable Generator"] has been setup here.}
+	generatorPower " It's currently powering the building. "
+	generatorPowerInside "The lights are on inside this building."
+	generatorLowFuel "You can hear that the Generator is running [boldSpan low] on fuel. "
+	transcieverPower  "Also a Radio Transciever seems to be running here."
+	dropItem "Drop item(0 energy)"
+	dropItemButton "Drop item"
+	travel "Travel"
+	goToLocation "Go to location"
+
+	zombieCannotEnterBarricades "You hit the door repeatedly trying to enter the building.. The building is barricaded.. you cannot enter it."
+	cannotEnterExtremeBarricaded "You tried to enter the building but it's too heavily barricaded.. Try to smash the barricades?"
+
+	junkToBarricade "After searching a while you use some junk to barricade the building."
+	barricadeConstructionSkill "You can't barricade a building if you don't have the Construction skill!"
+	blockingEntranceBarricades  " Any further barricading might not allow survivors to get in!"
+	failedBarricading "You tried to barricade the building but failed:(."
+	buildingInRuinsOrFull "The building is either fully barricaded or in ruins. You can't barricade it."
+	cantRepairWithoutSkill "You can't repair a building if you don't have the Construction skill!"
+	buildingRepairFailed "You repaired the building a bit but it didn't help a thing"
+	buildingFullyRepaired "The building is already fully repaired.."
+	repairedBuilding	"You've repaired the building."
+	youAreNotDead "You're not dead..."
+	youAreRevived  {With a great headache, buzz in your ears and unclear visions flashing before your eyes. You stand up from the ground. You woke up from the dead. [boldSpan "Thank God you're alive and not a zombie anymore" ]!}	
+	 standUpAsZombie {You stand up without being able to think clearly, everything seems unreal. [boldSpan "You are now a Zombie"]!}
+}
+
+#Settings page
+array set Lang {
+	set_settingsTitle "Personal and Game Settings"
+	set_changeLanguage "Change Language"
+	set_changePassword "Change Password"
+	set_oldPassword "Old Password"
+	set_newPassword "New Password"
+	set_retypePassword "Retype Password"
+	set_passwordsDontMatch "Your passwords don't seem to match <br/>"
+	set_incorrectOldPass "Your old password isn't correct. Try again <br/>"
+	set_successPassChange "Settings - Change Password succesfull" 
+	set_newPassSaved "Your new password has been saved"
+	set_changePassTitle "Settings - Change Pasword"
+	set_titleChangeLang "Settings - Change language"
+	set_yourCurrLang "Your current language is:"
+	set_langChangedTitle "Settings - Language change succesfull"
+	set_langChanged "Your language has been changed."
+	set_inexistentLang "That language doesn't exist"
+}
+#stopped in  both nl & ro
+#Skills page
+array set Lang {
+	skill_SpendPoints "You currently have %d exp to spend on skills. Your current class is [boldSpan %s]."
+	skill_Buy "Buy Skill"
+	Mercenary Mercenary
+	Technician Technician
+	Medic Medic
+	Survivor Survivor
+	Zombie Zombie
+	skill_YouHave "You have the [boldSpan %s] skill (%s)"
+	skill_YouDont {[boldSpan "%s"] (%s) Experience: [boldSpan "%s"] Skill Required: [boldSpan "%s"]}
+	skill_NoSuch "There is no such skill!<br/>"
+	skill_NotEnoughXp "You don't have enough xp to buy this skill.<br/>"
+	skill_YouNeedOtherSkill "To buy this skill you need to have the %s skill first!<br/>"
+	skill_AlreadyHave "You already have this skill.<br/>"
+	skill_YouBought {You have bought the %s skill.}
+	skill_BuyAnother {[newLink [newUrl skills.ws3 showSkills] "Buy another skill."]}
+	skill_sureToBuy {'<p>Are you sure you want to buy the<b> ' + %s  + ' </b>skill for <b> ' + %s +'</b> energy? </p>'}
+}
+
+#Auth page
+array set Lang {
+	username "Username"
+	password "Password"
+	login "Login"
+	register "Register"
+	registration "Registration"
+	register_now "Register now"
+	lost_password "Reset password"
+	email "E-mail"
+	r_password "Retype password"
+	r_email "Retype e-mail"
+	class "Class"
+	
+	error_useremail  "The username e-mail combination is wrong. Try again."
+	error_requestPasswordTime "You can't request a password from an account that has been active in the past 2 hours!"
+	error_requireAllFields "All fields are required!"
+	passwordReset_checkEmail "Ok, your password has been reset. A new password has been sent to your e-mail address."
+	iAgree {I have read and agree to the <a target="_blank" href="./rules.ws3">site rules</a> and I am aware that cheating and exploiting will burn my CPU and fail my HDD..}
+	error_noUserOrCode "The combination of your username and activation code doesn't exist."
+	error_wrongActivation "The activation code you used isn't the one we sent you."
+	error_alreadyActivated "You already activated your username. Login and start playing:)"
+
+	userActivated "Username Activated!"
+	yourUserActivated "Your username %s has now been activated successfully!"
+	activateToLogin "You need to activate your e-mail to be able to login"
+	startPlaying "and start playing."
+	failedActivation "Activation failed"
+	doesntExist {[boldSpan %s] doesn't exist}
+	wrongPassword "Uups, wrong password, please try again:)"
+	banned "Your username has been banned, you cannot login."
+
+	max2ip "You can't register more than 2 users from the same IP! If you're from a VPN or School, please contact the administrator and notify him."
+	alreadyRegistered "The username %s is already registered, please chose another or log in."
+	userAtLeastLong "Your username and password must be at least %d characters long. Username must be alphanumeric"
+	forbiddenUser "The username you have chosen is forbidden.. Chose another one!"
+	 passwordsNotMatch "Your passwords do not seem to match"
+	invalidMail "Your e-mail is not valid. Valid e-mail: my.example@domain.com"
+	emailsNotMatch "Your e-mail addresses don't match!"
+	alreadyRegMail "This e-mail is already registered.. sorry"
+	agreeText "Don't bother registering if you don't agree to the game rules!"
+	humanTestWrong "The text you entered is wrong, try again"
+	regSuccsesful {You have successfully registered the username [boldSpan "%s"].}
+	activationEmail "An activation e-mail has been sent to your e-mail address.  Please click the activation link to be able to start playing."
+		
+	
+}
+#Profile page
+array set Lang {
+	profilePageOf "Profile page of %s"
+	sendMessage	"Send Message"
+	image Image
+	itemName "Item name"
+	actions Actions
+	enc Enc.
+	aproxTradeValue  "Aprox Trade Value"
+}
+
+#Search.ws3
+array set Lang {
+	error_useForm "Huh? You need to use the form... not something else:)"
+	error_nothingToSearch "You started searching and soon realize that there's nothing here to search!"
+	error_nothingFound "You started searching for something usefull but you didn't find anything:("
+	error_maxEncumbrance "You found %s but you are at maximum carrying capacity so can't take it. Drop something first. "
+	foundItem "After searching around you have found <span class=\"bold\"> %s </span>."
+	searchAgain "Search again"
+}
+
+#Communication
+array set Lang {
+	youwantedtospeak "You wanted to speak but didn't want to say anything anymore.."
+	typemaxcharacters "You can only type %s characters:)"
+	yousaid {You said: "%s"}
+	mobilephonerequired "You need to have a Mobile Phone to be able to send, recieve and read messages. <br/>"
+	sendmessagesalive "You can only send and read messages when you're ALIVE."
+	title-send "Inbox - Sending messages"
+	inbox Inbox
+	sent Sent
+	newmsg "New message"
+	contactAdmins "Contact Admins"
+	nomessages "You haven't got any messages."
+	from From
+	read Read
+	when When
+	sent Sent
+	send Send
+	summary Summary
+	reply Reply
+	delete Delete
+	report "Report abuse"
+	recievedmsg "Recieved Message"
+	youhavexmessages {<p>You've got a total of  [boldSpan "%s"] messages. You have a limit of 30 messages. Please note that all exceeding messages will be deleted.</p>}
+	neversentmessages  "You never sent a message."
+	youhavexsentmessages { <p>You've got a total of  [boldSpan "%s"] sent messages. You don't have any limit for sent messages since the reciever must delete them.</p>}
+	specifypersonMsg "You need to specify to whom to send and also the message you want to send! <br/>"
+	messagetoyourself "It's not very usefull to message yourself, is it? Use a memo instead..:)<br/>"
+	messagebetween-min-max "Your message must be between %d and %d characters long!<br/>"
+	inexistentplayerformsg "The player you want to send a message doesn't exist!<br/>"
+	 sentmsgtoplayer  {You've sent a message to [boldSpan %s].}
+	 messagedeletedok "Message(s) deleted successfully."
+	 inexistentmessage "Either this message isn't for you or it doesn't exist.<br/>"
+	 messagesdescription "Send a message using your mobile."
+	 
+}
+
+#Combat - attack..
+array set Lang {
+	attackUser "Attack %s"
+	attackStuff "Attack misc stuff"
+	attackOptions "Attack options"
+}

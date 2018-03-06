@@ -1,0 +1,258 @@
+#This is the admin panel. 
+#It uses the same functions as the other files but all the specific functions are DEFINED HERE ONLY!
+try {
+	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+proc PutImage {imageLocation} {
+	package require tclgd
+	set image [open [file dirname [web::config script]]/$imageLocation]
+	GD create_from_jpeg captain $image
+	#set  height [expr {[captain height]/2.6}]
+	set  height [captain height]
+	set width [captain width]
+	#web::put "<img src=\"$imageLocation\" width=\"$width\" height=\"$height\" />"
+	web::put "<div style=\"	background-image: url($imageLocation); width:${width}px; height: ${height}px; min-height: ${height}px;\">[putAdminLinks]</div>"
+}
+
+proc putAdminLinks {} {
+	return "<div style=\"padding:3px;\">[boldSpan "Admin Links:"]<br/>
+	<a href=\"[newUrl admin.ws3 displayUsers]\">List all Players</a> | 
+	<a href=\"[newUrl admin.ws3 search]\">Search</a> | 
+	<a href=\"[newUrl admin.ws3 GiveItems]\">Give Items</a> | 
+	<a href=\"[newUrl admin.ws3 SpecialCodes]\">Special Codes</a> | </div>"
+}
+### Handling
+proc defaultPage {{extraStuff "" }} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	page "Admin panel - Everyday Administration of the mindless" {
+	PutImage ./images/captain.jpg
+	} {
+		web::putx "<p>Welcome mein Furher <span class=\"bold\">$LostPlayer(username)</span>. Here to command the mindless and the people of thy Reich?</p> "
+		web::put "<h3>Reich stats</h3>"
+		set lastDay [clock add [clock seconds] -1 day]
+		#Mysql selects! (lots of them:P)
+		set totalPlayers [DatabaseQuery "SELECT count(*) FROM LostPlayers"]
+		set lastDayPlayers [DatabaseQuery "SELECT count(*) FROM LostPlayers where created>$lastDay"]
+		set peopleBanned [DatabaseQuery "SELECT count(*) FROM LostPlayers where level=1"]
+		
+		set zombies [DatabaseQuery "SELECT count(*) FROM LostPlayers where status='Zombie'"]
+		set dead [DatabaseQuery "SELECT count(*) FROM LostPlayers where status='dead'"]
+		set alive [DatabaseQuery "SELECT count(*) FROM LostPlayers where status='Alive'"]
+		
+		set totalMessages [DatabaseQuery "SELECT count(*) FROM Messages"]
+		set lastDayMessages [DatabaseQuery "SELECT count(*) FROM Messages where msgTime>$lastDay"]
+		
+		set totalLocalMessages [DatabaseQuery "SELECT count(*) FROM LocalMsg"]
+		set lastDayLocalMessages [DatabaseQuery "SELECT count(*) FROM LocalMsg where msgTime>$lastDay"]
+		
+		set totalItems [DatabaseQuery "SELECT count(*) FROM Items"]
+		web::put {<div id="admin">}
+		web::put "<p>[boldSpan "Total Players"] registered: [colorSpan $totalPlayers lightgreen] =-= Past Day: [colorSpan $lastDayPlayers lightgreen] player(s) =-= Banned: [colorSpan $peopleBanned lightgreen]<br/>
+		There are [colorSpan $zombies lightgreen] zombies wandering and [colorSpan $dead lightgreen] rotting bodies.. Willl the [colorSpan $alive lightgreen] alive players survive the horror?<br/>
+		Total messages:  [colorSpan $totalMessages lightgreen] Past day:  [colorSpan $lastDayMessages lightgreen] =-= Total local messages:  [colorSpan $totalLocalMessages lightgreen] Past day:  [colorSpan $lastDayLocalMessages lightgreen]  <br/>
+		Total items owned and found by the players of the game: [colorSpan $totalItems lightgreen]<br/>
+			"
+		web::put {</p></div>}
+		web::putx $extraStuff
+
+	} 
+}
+proc displayUsers {} {
+	set player [web:get player]
+	set offset [web:get offset]
+	set perPage [web:get perPage]
+	
+	if {$player == ""} { set player none }
+	if {$offset == "" || ![string is digit $offset]} { set offset 0 }
+	if {$perPage == "" || ![string is digit $perPage]} { set perPage 10 }
+	
+	set allPlayers [DatabaseQuery "SELECT username,level,lastAction,regIp,status from LostPlayers ORDER BY username ASC LIMIT $offset, $perPage"]
+	set totalPlayers [DatabaseQuery "SELECT count(username) from LostPlayers"]
+	set playersList {<div style="padding:0;margin:0;"><table border="1"><tr><th>Username</th><th>Level</th><th>Last Action</th><th>RegIp </th> <th> Status</th></tr>}
+
+	foreach {username level lastaction regIp status } $allPlayers {
+		#TODO.. put links on USERNAME to show info about username & edit username;;)
+		#also, link to regIp to search by ip..
+		append playersList "<tr><td>[newLink [newUrl admin.ws3 playerInfo player $username] $username]</td><td>[GetLevel $level]</td><td>[timeDiff [expr {[unixtime] -$lastaction}]] ago</td><td>$regIp</td><td>$status</td></tr>"
+	}
+	append playersList "</table></div>"
+	
+	set totalPages [expr {ceil(double($totalPlayers)/$perPage)}]
+	set currentPage [expr {ceil(double($offset)/$perPage)+1}]
+	set prevPage [expr {$currentPage-1}]  ; set nextPage [expr {$currentPage+1}] 
+	append playersList "<div style=\"text-align:center;\">Page: "
+	if {$prevPage>0} {
+		append playersList "<a href=\"./[newUrl admin.ws3 displayUsers offset [expr {int($prevPage*$perPage-$perPage)}]]\">Previous</a> "
+	}
+	for {set i 1} {$i<=$totalPages} {incr i} {
+		if {$i == $currentPage} {
+			append playersList "<span>$i</span> " 
+		} else { 
+			append playersList "<a href=\"./[newUrl admin.ws3 displayUsers offset [expr {$i*$perPage-$perPage}]]\">$i</a> "  
+		}
+	}
+
+	if {$nextPage<=$totalPages} {
+		append playersList "<a href=\"./[newUrl admin.ws3 displayUsers offset [expr {int($nextPage*$perPage-$perPage)}]]\">Next</a>"
+	}
+	append playersList  "</div>"
+	defaultPage "$playersList"
+}
+proc playerInfo {} {
+	set player [web:get player]
+	#id,username,password,email,level,town,exp,health,encumbrance,regip,clan,x,y,energy
+	set playerInfo [DatabaseFetchArray "SELECT  * FROM LostPlayers where username='$player'"]
+	if {[lindex $playerInfo 1] == ""} { 
+		defaultPage [addLabel error "The player $player doesn't exist.."]
+	} else  {
+		append html "<h3>Stats for $player</h3><table>"
+		foreach {input value input2 value2} $playerInfo {
+			incr i
+			append html "<tr><td>[string totitle $input]</td>"
+			append html "<td>[htmlInput $input text $value]</td>"
+			append html "<td>[string totitle $input2]</td>"
+			append html "<td>[htmlInput $input2 text $value2]</td></tr>"
+		}
+		append html </table>
+
+		#foreach {input value} $playerInfo {
+			#incr i
+			#append html "[::xhtml::label [string totitle $input] $input]"
+			##name type value
+			#append html [htmlInput $input text $value]	
+			##if {[expr {$i%2}]==0} { append html <br/>	}
+			 #append html <br/>
+		#}
+		
+		if {[VerifyLevel 5]} { append html [htmlInput Submit submit "Update Player"] }
+		defaultPage [generateForm [newUrl admin.ws3 updatePlayer] none "<fieldset>$html</fieldset>"]
+	}
+}
+#TODO: Add everything to the database or just make links for every function
+proc updatePlayer {} {
+	set username [web:post username] ; set i 0
+	foreach key [web::formvar -names] {
+		if {![string match -nocase "*$key*" "submit level"]} {	append toUpdate "[expr {$i>0?",":""}]$key='[web::formvar $key]'" }
+		incr i
+	}
+	DatabaseExec "UPDATE LostPlayers SET $toUpdate where username='$username'"
+	defaultPage "<div class=\"success\">Ok, you've edited everything for [boldSpan ${username}].</div>"
+}
+
+proc search {} {
+	defaultPage {
+		Hello There!<br/>
+	}
+}
+proc giveItems {} {
+	set option [web:get option]
+}
+proc SpecialCodes {} {
+	defaultPage "
+		<form method=\"post\" action=\"[web::cmdurl SpecialCodes]\">
+		<fieldset>
+		[htmlInput action radio getCode] Get Code(s) =-= [htmlInput action radio generateCode] Generate Code(s) <br/>
+		Item: <select name=\"item\">
+		<option value=\"zomblabmix\">Zombie Revival Lab Mixture</option>
+		<option value=\"survsyringe\">Survival Syringe</option>
+		</select>
+		Quantity [htmlInput quantity text 1 size=\"3\"] 	<br/><br/>
+		[htmlInput submit submit {Do It}]
+		</fieldset>
+		</form>"
+}
+#############
+#Dispatching commands
+#############
+web::command default {
+	if {![IsAuthenticated] || ![VerifyLevel 4]} {
+		RedirectRestricted
+	} else  {   
+		defaultPage { "test" }
+		SaveSession
+	}
+}
+web::command displayUsers {
+	if {![IsAuthenticated] || ![VerifyLevel 4]} {
+		RedirectRestricted
+	} else  {   
+		displayUsers
+		SaveSession
+	}
+}
+web::command playerInfo {
+	if {![IsAuthenticated] || ![VerifyLevel 4]} {
+		RedirectRestricted
+	} else  {   
+		playerInfo
+		SaveSession
+	}
+}
+web::command search {
+	if {![IsAuthenticated] || ![VerifyLevel 4]} {
+		RedirectRestricted
+	} else  {   
+		search
+		SaveSession
+	}
+}
+web::command updatePlayer {
+	if {![IsAuthenticated] || ![VerifyLevel 5]} {
+		RedirectRestricted
+	} else  {   
+		updatePlayer
+		SaveSession
+	}
+}
+web::command banUsername {
+	if {![IsAuthenticated] || ![VerifyLevel 5]} {
+		RedirectRestricted
+	} else  {   
+		defaultPage
+		SaveSession
+	}
+}
+web::command giveItems {
+	if {![IsAuthenticated] || ![VerifyLevel 5]} {
+		RedirectRestricted
+	} else  {   
+		giveItems
+		SaveSession
+	}
+}
+web::command SpecialCodes {
+	if {![IsAuthenticated] || ![VerifyLevel 7]} {
+		RedirectRestricted
+	} else  {   
+		SpecialCodes
+		SaveSession
+	}
+}
+web::command goToPlayer {
+	if {![IsAuthenticated] || ![VerifyLevel 5]} {
+		RedirectRestricted
+	} else  {   
+		set player [web:get player] ; set errors ""
+		array set PlayerInfo [list town "" x "" y ""]
+		array set PlayerInfo [DatabaseFetchArray "SELECT town,x,y from LostPlayers where username='$player'"]
+		if {$PlayerInfo(town) == ""} { append errors "That player doesn't exist!" }
+		
+		if {[string length $errors] ==  0} {
+			array set LostPlayer [GlobalVar::carray get LostPlayer]
+			DatabaseExec "UPDATE LostPlayers SET x='$PlayerInfo(x)',y='$PlayerInfo(y)',town='$PlayerInfo(town)' WHERE username='$LostPlayer(username)'"
+			
+			defaultPage "<div class=\"success\">You've moved to $player at $PlayerInfo(x),$PlayerInfo(y) in $PlayerInfo(town).</div>"
+		} else { defaultPage "<div class=\"success\">$errors</div>" }
+		SaveSession
+	}
+}
+
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+
+} on error {bigError} { web::put "Some errors occured: $bigError"}

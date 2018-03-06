@@ -1,0 +1,230 @@
+
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+
+proc MessagesPage {{extraText ""}} { 
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set hasMobile [DatabaseQuery "SELECT id FROM Items,ItemsDesc WHERE ItemsDesc.name='Mobile Phone' and Items.id=ItemsDesc.itemID and Items.userID='$LostPlayer(userID)'"]
+	
+	if {$hasMobile == ""} { append errors [Lost:lang mobilephonerequired] }
+	if {[string match -nocase "*$LostPlayer(status)*" "dead zombie"]} { append errors [Lost:lang sendmessagesalive] }
+	if {[string length $errors] ==  0} {
+		page [Lost:lang title-send]  {
+			web::putx {
+				<div class="links">
+				<p>
+				 <a href="<? web::put [web::cmdurl default] ?>" class="menuLink" rel="map.ws3"><? web::put [Lost:lang inbox] ?></a>  
+				 <a href="<?web::put [web::cmdurl Sent]?>" class="menuLink" rel="map.ws3"><? web::put [Lost:lang sent] ?> </a>  
+				 <a href="<?web::put [web::cmdurl New]?>" class="menuLink" rel="map.ws3"><? web::put [Lost:lang newmsg] ?></a> 
+				 <a href="<?web::put [web::cmdurl ContactAdmins]?>"  class="menuLink" rel="map.ws3"><? web::put [Lost:lang contactAdmins] ?></a>
+				 </p>
+			</div>
+			<br/>
+			}
+			uplevel $extraText
+		}
+	} else { 
+		page "[Lost:lang title-send]"  {
+			web::putx [addLabel error $errors]
+		}
+	}
+}
+proc ShowInbox {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	MessagesPage {
+		set messages [DatabaseQuery "SELECT msgid,LostPlayers.username,msg,msgTime,readMsg FROM Messages,LostPlayers where Messages.fromUser=LostPlayers.userID and toUser='$LostPlayer(userID)' ORDER BY (msgTime+0) DESC"] ; #AND fromUser='SYSTEM'
+		set timenow [unixtime]
+		set totalMessages [expr {[llength $messages]/5}]
+
+		if {$totalMessages == 0} { web::put [boldSpan [Lost:lang nomessages]] } else {
+			web::put [Lost:lang youhavexmessages %s] 
+			web::putx { 
+			<form method="post" action="<? web::put [web::cmdurl DeleteMessages] ?>">
+			<table class="msg"><tr><th><? web::put [htmlInput selectAll checkbox selectAll id="selectAll"] ?></th><th><? web::put [Lost:lang from] ?></th><th><? web::put [Lost:lang summary] ?></th><th><? web::put [Lost:lang when] ?></th><th><? web::put [Lost:lang read] ?></th></tr> }
+			foreach {msgid fromUser msg msgTime readMsg} $messages {
+				web::putx "<tr [expr {$readMsg==0? " style='font-weight:bold;'":""}]>
+				<td>[htmlInput toDelete checkbox $msgid ]</td><td>$fromUser</td><td>[newLink [web::cmdurl ReadMsg msgid $msgid] [string range $msg 0 30]...]</td>
+				<td>[timeDiff [expr {$timenow -$msgTime}]] ago</td><td>[expr {$readMsg==0? " [Lost:lang no] ":" [Lost:lang yes] "}]</td></tr>"
+			}
+			web::put {</table> <p><input type="submit" name="delete" id="button" value="Delete" /></p> </form>		}
+		}
+	}
+}
+proc Sent {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	MessagesPage {
+		set messages [DatabaseQuery "SELECT msgid,LostPlayers.username,msg,msgTime,readMsg FROM Messages where Messages.toUser=LostPlayers.userID and fromUser='$LostPlayer(userID)' ORDER BY (msgTime+0) DESC"] ; #AND fromUser='SYSTEM'
+		set timenow [unixtime]
+		set totalMessages [expr {[llength $messages]/5}]
+
+		if {$totalMessages == 0} { web::put [boldSpan [Lost:lang neversentmessages] ] } else {
+			web::put [Lost:lang youhavexsentmessages] 
+			web::putx { 
+				<table class="msg"><tr><th><? web::put [htmlInput selectAll checkbox selectAll id="selectAll"]?></th><th>To</th><th><? web::put [Lost:lang summary] ?></th><th><? web::put [Lost:lang when] ?></th><th><? web::put [Lost:lang read] ?></th></tr> }
+			foreach {msgid toUser msg msgTime readMsg} $messages {
+				web::putx "<tr [expr {$readMsg==0? " style='font-weight:bold;'":""}]>
+				<td>[htmlInput toDelete checkbox $msgid ]</td><td>$toUser</td><td>[newLink [web::cmdurl ReadMsg msgid $msgid] [string range $msg 0 30]...]</td>
+				<td>[timeDiff [expr {$timenow -$msgTime}]] ago</td><td>[expr {$readMsg==0? "<? web::put [Lost:lang no] ?>":"<? web::put [Lost:lang yes] ?>"}]</td></tr>"
+			}
+			web::put {</table>}
+		}
+	}
+}
+proc SendMessage {} {
+	set toOther [web:post toOther]
+	set tofriend [web:post tofriend]
+	set message [web:post message]
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set errors ""
+	
+	if {($toOther == "" ^ $tofriend != "---") || $message == ""}  { append errors [Lost:lang specifypersonMsg] }
+	if {$toOther != "" || $tofriend == "---"} { set player $toOther } else { set player $tofriend }
+	if {$player == $LostPlayer(username)} { append errors [Lost:lang messagetoyourself] }
+	if {[string length $message] > 500 || [string length $message] < 30} { append errors [Lost:lang messagebetween-min-max 30 500]  }
+
+	set username [DatabaseQuery "SELECT username,userID FROM LostPlayers where username='$player'"]
+	if {$username == ""} { append errors [Lost:lang inexistentplayerformsg] }
+
+	set playerID [lindex $username 1]
+	if {[string length $errors] ==  0} {
+		set time [unixtime]
+		DatabaseExec "INSERT INTO Messages (fromUser,toUser,msg,msgTime,readMsg) VALUES('$LostPlayer(userID)','$playerID','$message','$time',0)"
+		DatabaseExec "UPDATE LostPlayers SET lastAction='$time',energy=energy-1 where username='$LostPlayer(username)'"
+		
+		MessagesPage { 	addLabel success [subst [Lost:lang sentmsgtoplayer $player ]]	} 
+	} else { MessagesPage {	addLabel error $errors ; Compose } }
+}
+proc ReadMsg {} {
+	set msgid [web:get msgid] 
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set errors ""
+	
+	array set myMessage [DatabaseFetchArray "Select * FROM Messages where msgid='$msgid' and toUser='$LostPlayer(userID)'"]
+	if {$myMessage(toUser) == ""} { append errors [Lost:lang inexistentmessage] }
+
+	if {[string length $errors] ==  0} {
+		set time [unixtime]
+		DatabaseExec "UPDATE Messages  SET readMsg=1 WHERE msgid='$msgid' and readMsg=0"
+		MessagesPage { 
+			web::putx "<table class='msg'>
+			<tr> <th colspan='2' style='text-align:center;color:lightgreen;'><? web::put [Lost:lang recievedmsg] ?></th><tr>
+			<tr> <td><? web::put [Lost:lang from] ?>:</td><td>$myMessage(fromUser)</td> <tr>
+			<tr> <td><? web::put [Lost:lang sent] ?>:</td><td>[timeDiff [expr {$time -$myMessage(msgTime)}]] </td> <tr>
+			<tr> <td colspan='2'>$myMessage(msg)</td><tr>
+			<tr> <td colspan='2' style='text-align:center;'>"
+			web::putx {
+				<form method="post" style="display:inline;" action="<?web::put [web::cmdurl New toOther $myMessage(fromUser) message "=-=-=-=-=-=-=-=-=-=-=-=-= $myMessage(msg)" ]?>">
+				<input type="submit" name="reply"  value="<? web::put [Lost:lang reply] ?>" />	</form>
+				<form method="post" style="display:inline;" action="<?web::put [web::cmdurl DeleteMessages]?>">
+				{web::put [htmlInput toDelete hidden $myMessage(msgid)]}
+				<input type="submit" name="delete"  value="<? web::put [Lost:lang delete] ?>" /> </form>
+				<form method="post" style="display:inline;" action="<?web::put [web::cmdurl ReportAbuse]?>">
+				{web::put [htmlInput toDelete hidden $myMessage(msgid)]}
+				<input type="submit" name="reportAbuse"  value="<? web::put [Lost:lang report] ?>" /> </form>
+			}
+			web::put "
+			</td><tr>
+			</table>"
+		}
+	} else { MessagesPage {	addLabel error $errors  } }
+}
+#Forms 
+proc Compose {} {
+	web::putx {
+	<form method="post" action="<? web::put [web::cmdurl SendMessage]?>">
+	<fieldset>
+	<legend><?web::put [Lost:lang messagesdescription]?></legend>
+	<p>
+	<label for="toOther">To player:</label>
+	<input type="text" name="toOther" id="toOther" value=" <? getFormVar toOther ?> <? web::put [web:get toOther]?>" /> or to a friend
+	<select id="tofriend" name="tofriend" class="ui-corner-all ui-widget-content text" >
+		<option value="---">---</option>
+	</select>
+	</p><p>
+	<label for="message">Message:</label>
+	<textarea style="width:500px;height:150px;" name="message" id="message" maxlength="500"><?getFormVar message?><? web::put [web:get message]?></textarea>
+	</p>
+	<input type="submit" name="sendMessage" class="menuLink" id="button" value="<?web::put [Lost:lang send] ?>"  />
+	</fieldset>
+	</form>
+	}
+}
+#############
+#Dispatching commands
+#############
+web::command default {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {  
+		ShowInbox 
+		SaveSession
+	}
+}
+web::command New {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		array set LostPlayer [GlobalVar::carray get LostPlayer]
+		MessagesPage Compose
+		SaveSession
+	}
+}
+web::command Sent {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		Sent
+		SaveSession
+	}
+}
+
+web::command SendMessage {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		SendMessage 
+		SaveSession
+	}
+}
+
+web::command ReadMsg {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		ReadMsg 
+		SaveSession
+	}
+}
+
+web::command DeleteMessages {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		#DeleteMessages
+		set msgIds [web:post toDelete]
+		
+		if {$msgIds != ""} {
+			array set LostPlayer [GlobalVar::carray get LostPlayer]
+			foreach msgid $msgIds {
+				incr i
+				#The order is really important
+				append values "[expr {$i>1?"OR":""}] msgid='$msgid'"
+			}
+			DatabaseExec "DELETE FROM Messages WHERE ($values) AND toUser='$LostPlayer(username)'"
+			MessagesPage { addLabel success [Lost:lang messagedeletedok] }
+		} else { MessagesPage {	addLabel error "No messages selected or no such message."  }  }
+		SaveSession
+	}
+}
+
+
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+	 
+
+

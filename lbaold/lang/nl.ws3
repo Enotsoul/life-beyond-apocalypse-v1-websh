@@ -1,0 +1,211 @@
+# Life Beyond Apocalypse language file
+# English by Andrei
+
+global Lang
+#Menu Items
+array set Lang {
+	map 			Map
+	profile			Profile
+	players 		Players
+	mobileMail 		"Mobile Mail"
+	manufacturing	Manufacturing
+	skills 			Skills
+	settings		Settings
+	chat			"Chat Now"
+	adminPanel		"[Admin Panel]"
+	index			"Main Page"
+	statistics		"Game Statistics"
+	wiki			"Wiki/Help"
+	login			Login
+	logout			"Log out"
+	register		Register
+
+	credits			Credits
+	gameRules		"Game rules"
+
+	energy			Energy
+	experience		Experience
+	health			Health
+	status			Status
+	weight			Weight
+	foodLevel		"Food level"
+	waterLevel		"Water level"
+		
+	onlinePlayers	"Online Players"
+}
+#General things
+array set Lang {
+	hp	hp
+	by	by
+	outside {You are <span class="bold">outside</span>}
+	inside {You are <span class="bold">inside</span>}
+	attack Attack
+	theBuilding "the building"
+	theBarricades "the barricades"
+	times times
+	self self
+	with with
+}
+
+#Items Page
+array set Lang {
+	items_cantDrop "You can't drop something you don't have!"
+	items_droppedOk "You have dropped"
+	items_dontHave "You can't really use something you don't have"
+	items_youveUsed "You have used"
+	items_healedYourInfection "You've healed your infection!"
+	items_youHealed "You healed"
+	items_youBeenHealed "You've been healed"
+	items_healedYourself "You've healed yourself"
+	items_reloadedPistol "You have reloaded your Pistol."
+	items_dontHavePistolClip "You don't have any pistol clip to reload your Pistol."
+	items_useAllBullets "You have to use all the bullets before you reload your pistol."
+	items_reloadedShotgun "You have reloaded your shotgun."
+	items_dontHaveShells "You don't have any Shotgun Shells to reload your Shotgun."
+	items_useAllShells "You have to use all the shells before you reload your shotgun."
+	items_refuledChainsaw "You have refueled your Chainsaw."
+	items_noFuelCanForChainsaw "You don't have any Fuel Canister in your inventory to refuel your chainsaw."
+	items_chainsawNotEmpty "Your chainsaw is not empty."
+	items_bookKnowledge "While reading this book you gain some new knowledge."
+	items_bookRubbish "This book is rubbish, you already know what you've read."
+	items_bookFinished "You finished reading this book."
+	items_buildingHasGenerator "This building seems to already have a Generator in it, try rebuilding or refuling it first!"
+	items_skillForGenerator "You need to have the Electrical equipment skill to be able to use a Generator"
+	items_beInsideForItem "You must be inside to place a %s!<br/>"
+	 items_someoneSetupGenerator "has set up a Portable generator in the building. It will last for aproximatively 24 hours, someone needs to refuel it."
+	items_youSetupGenerator "You've set up a Portable generator in the building. It will last for aproximatively 24 hours, someone needs to refuel it."
+	items_notWorkingYet	"This is not working yet:)!"
+	items_noTranscieverInBuilding  "This building seems to already have a Transciever in it.<br/>"
+	items_skillForTransciever "You need to have the Electrical equipment skill to be able to use a Radio Transciever!"
+	items_someoneSetupTransciever "has set up a Radio Transciever in the building."
+	items_youSetupTransciever "You've set up a Radio Transciever in the building."
+	items_noGeneratorToRefuel "There is no generator in this building to refuel!<br/>"
+	items_noCarToRefuel "You don't see any car to refuel it. You need to be inside to refuel a Generator.<br/>"
+	items_someoneRefuledGenerator "has refueled the Portable generator. It will last for aproximatively 72 hours."
+	items_someoneRefuledGenerator  "You've refueled the Portable generator. It will last for aproximatively 72 hours."
+	items_antidoteCuredYou   "You've used an antidote. Your infection has now been cured."
+	items_functionInAlpha    "This function is currently in alpha stage.. Not all items can  be used atm. Try another item" 
+}
+array set Lang {
+	"Punch" "Punch"
+	"Bite" 	"Bite"
+	"Hands"	"Hands"
+	"Wine" "Wine"
+	"Toolbox" "Toolbox"
+	"ToolBox" "Toolbox"
+	"Wood" "Wood"
+	"Spare Parts" "Spare Parts"
+	"Nylon" "Nylon"
+	"Cotton Tifon" "Cotton Tifon"
+	"Medicinal Herbs" "Medicinal Herbs"
+	"Lab Liquids" "Lab Liquids"
+	"Chemicals" "Chemicals"
+	"Gas Mask" "Gas Mask"
+	"Helmet" "Helmet"
+	"Crowbar" "Crowbar"
+	"Pistol Clip" "Pistol Clip"
+	"Shotgun Shells" "Shotgun Shells"
+	"Lab Equipment" "Lab Equipment"
+	"Fuel Canister" "Fuel Canister"
+	"Radio" "Radio"
+	"Radio Transmitter" "Radio Transmitter"
+	"Portable Generator" "Portable Generator"
+	"Book" "Book"
+	"Orthodox Bible" "Orthodox Bible"
+	"Newspaper" "Newspaper"
+	"Journal and Pen" "Journal and Pen"
+	"Battery" "Battery"
+	"Binoculars" "Binoculars"
+	"Flare Gun" "Flare Gun"
+	"Mobile Phone" "Mobile Phone"
+	"First Aid Kit" "First Aid Kit"
+	"Antidote" "Antidote"
+	"Trap" "Trap"
+	"BOMB" "BOMB"
+	"Water Canister" "Water Canister"
+	"Water Bottle" "Water Bottle"
+	"Can Food" "Can Food"
+	"Dried Food" "Dried Food"
+	"Empty Syringe" "Empty Syringe"
+	"Survival Syringe" "Survival Syringe"
+	"Zombie Revival Lab Mixture" "Zombie Revival Lab Mixture"
+	"Pool Cue" "Pool Cue"
+	"Baseball Bat" "Baseball Bat"
+	"Knife" "Knife"
+	"Axe" "Axe"
+	"Kantana" "Kantana"
+	"Pistol" "Pistol"
+	"Shotgun" "Shotgun"
+	"Chainsaw" "Chainsaw"
+	"Taser" "Taser"
+	"Flak jacket" "Flak jacket"
+	"Radiation Suite" "Radiation Suite"
+}
+#Functions
+array set Lang {
+	youHaveNoEnergy "<br/> You don't have anymore energy for this task... Please try later when you feel blood in your veins."
+	travelLongDistanceWithoutClicking "Now, how did you get that ideea? Trying to travel a long distance without clicking on the next building? <br/>"
+	youAreExhausted "You are exhausted from everything you did, you don't have anymore energy.. you just fall asleep. come back when you have more energy left. Normally you get 10 energy per hour."  
+	youAreDead "You are dead, you can't do anything...<br/>" 
+	mapTitle "Map - Play around in the city"
+	youAreInfected "Your are feeling dizzy. You are infected, every energy use takes 1 hp."
+	standUp	"Stand Up"
+	cost50Energy "This costs 50 energy"
+	energyLeft "Only $LostPlayer(energy) energy left!"
+	enterBuilding  "Enter building"
+	exitBuilding  "Exit building"
+	searchItems "Search for usefull items"
+	closeDoor "Close door"
+	openDoor "Open door"
+	barricadeBuilding "Barricade building"
+	repairBuilding "Repair Building"
+	saySomething "Say something"
+	dragCorpseOut "Drag corpse outside"
+
+	doorIsOpen "The door is wide open."
+	doorIsClosed "The door has been closed."
+	simpleBarricades "You see some <span class=\"bold\">simple</span> barricades."
+	advancedBarricades "You see some <span class=\"bold\">advanced</span> barricades."
+	extremeBarricades "You see it has been <span class=\"bold\">extremely</span> barricaded."
+	inaccesibleBarricades "You see it <span class=\"bold\">unaccesible</span> barricaded."
+
+	buildingNotDamaged "The building is in great shape."
+	buildingIsDamaged {The building is <span class="bold">damaged</span>.}
+	buildingIsRuined {The building is in <span class="bold">ruins</span> (needs to be repaired before it can be used).}
+
+	sittingLonely "Sitting here lonely"
+	somePeopleHere "Some people are here"
+	noOneHere "There seems to be no one here."
+	ZombiesHere "<br/>Lurking around are $zombies zombies."
+	deadHere "<br/>There are $dead dead corpses rotting here."
+	portableGeneratorHere {A [boldSpan "portable Generator"] has been setup here.}
+	damagedPortableGeneratorHere  {A [colorSpan damaged red] [boldSpan "portable Generator"] has been setup here.}
+	generatorPower " It's currently powering the building. "
+	generatorPowerInside "The lights are on inside this building."
+	generatorLowFuel "You can hear that the Generator is running [boldSpan low] on fuel. "
+	transcieverPower  "Also a Radio Transciever seems to be running here."
+	noItems "You don't have any items with you:("
+	dropItem "Drop item(0 energy)"
+	dropItemButton "Drop item"
+}
+
+#Settings page
+array set Lang {
+	set_settingsTitle "Personal and Game Settings"
+	set_changeLanguage "Change Language"
+	set_changePassword "Change Password"
+	set_oldPassword "Old Password"
+	set_newPassword "New Password"
+	set_retypePassword "Retype Password"
+	set_passwordsDontMatch "Your passwords don't seem to match <br/>"
+	set_incorrectOldPass "Your old password isn't correct. Try again <br/>"
+	set_successPassChange "Settings - Change Password succesfull" 
+	set_newPassSaved "Your new password has been saved"
+	set_changePassTitle "Settings - Change Pasword"
+	set_titleChangeLang "Settings - Change language"
+	set_yourCurrLang "Your current language is:"
+	set_langChangedTitle "Settings - Language change succesfull"
+	set_langChanged "Your language has been changed."
+	set_inexistentLang "That language doesn't exist"
+}
+

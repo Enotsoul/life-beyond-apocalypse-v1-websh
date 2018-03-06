@@ -1,0 +1,364 @@
+try {
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+
+#############
+#Form Functions
+#############
+proc loginForm {} {
+	web::putx {
+	<form method="post" action="{web::put [web::cmdurl checkLogin]}" class="reg">
+	<fieldset>
+	<legend>Login</legend>
+	<label for="username">Username:</label>
+	<input type="text" name="username" id="username" value="{getFormVar username}" />
+	<br />
+	<label for="password">Password:</label>
+	<input type="password" name="password" id="password" value="" />
+	<br />
+	<input type="submit" name="register" id="button" value="Login"  />
+	</fieldset>
+	</form>
+	}
+	web::put "\[<a href=\"[web::cmdurl register]\">Register now</a>\]"
+	web::put "\[<a href=\"[web::cmdurl lostPassword]\">Lost Password</a>\]"
+}
+proc lostPassword {} {
+	set submit [web:post lostpassword]
+	set username [web:post username]
+	set email [web:post email]
+	set errors ""
+		
+	if {[string match Submit $submit] && $username != "" && $email != ""} {
+		array set player [DatabaseFetchArray "select * from LostPlayers where username='$username' and email='$email'"]
+		if {$player(username) == ""} { append errors "The username e-mail combination is wrong. Try again." } else {
+			if {[expr {([unixtime]-$player(lastAction))/3600}]<=2} { 
+				append errors "You can't request a password from an account that has been active in the past 2 hours!" 
+			}
+		}
+		if {[string length $errors] ==  0} {
+			set ip [web::request REMOTE_ADDR]
+			set password [generateCode 13]
+			set timeNow [unixtime]
+			DatabaseExec "UPDATE LostPlayers SET password='$password',lastAction='$timeNow' WHERE username='$username'"
+			set mailmessage "Hello there <u>$username</u><br/><br/>
+			This email has been sent because someone requested a Lost Password at <b>Life Beyond Apocalypse</b> http://lifebeyondapocalypse.net<br/><br/>
+			A new password has been generated for you. Please log in and <b>change it</b> so you'll remember it from now on.<br/>
+			Request ip: <b>$ip</b><br/>
+			New Password: <b>$password</b><br/><br/>
+					
+			=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=<br/>
+			BE CAREFULL! NEVER give your password to ANYONE. We at LifeBeyondApocalypse.net DO NOT NEED your password.<br/>
+			Some people claim they will give you free items or that they have a program that helps you \"gain experience\" 
+			or that it can exploit the game. Don't accept any program as it will steal your password.<br/><br/>
+			If you recieved this e-mail it also means that you agreed to our Game Terms and Rules.
+			<br/><br/>
+			The LifeBeyondApocalypse team,<br/>
+			www.lifebeyondapocalypse.net (shorthand  http://lba.im/)"
+			send_mail $email "Password request at Life Beyond Apocalypse" $mailmessage
+			addLabel success "Ok, your password has been reset. A new password has been sent to your e-mail address."
+		} else { addLabel error $errors }
+	}
+	web::put
+
+	web::putx {
+	<form method="post" action="{web::put [web::cmdurl lostPassword]}" class="reg">
+	{web::put [colorSpan "All fields are required" red]}
+	<fieldset>
+	<legend>Reset Password</legend>
+	<label for="username">Username:</label>
+	<input type="text" name="username" id="username" value="{getFormVar username}" />
+	<label for="email">E-mail:</label>
+	<input type="text" name="email" id="email" value="{getFormVar email}" />
+	<br />
+	<label for="humanTest">Enter text: <img src="{web::put [web::cmdurl Captcha]}" /> </label>
+	<input type="text" name="humanTest" id="humanTest" value="" size="4" maxlength="4" />
+	<input type="submit" name="lostpassword" id="button" value="Submit"  />
+	</fieldset>
+	</form>
+	}
+ 	
+}
+proc regForm {} {
+		web::putx {
+	<form method="post" action="{web::put [web::cmdurl proccessRegistration]}" class="reg">
+	{web::put [colorSpan "All fields are required" red]}
+	<fieldset>
+	<legend>Registration</legend>
+	<p>
+	<label for="username">Username:</label>
+	<input type="text" name="username" id="username" value="{getFormVar username}" />
+	</p><p>
+	<label for="password">Password:</label>
+	<input type="password" name="password" id="password" value="" />
+	</p><p>
+	<label for="rpassword">Retype Password:</label>
+	<input type="password" name="rpassword" id="rpassword" value="" />
+	</p><p>
+	<label for="email">E-mail:</label>
+	<input type="text" name="email" id="email" value="{getFormVar email}" />
+	</p><p>
+	<label for="remail">Retype e-mail:</label>
+	<input type="text" name="remail" id="remail" value="{getFormVar remail}" />
+	</p><p>
+	<label for="class">Class:</label>
+	 <select id="class" name="class" >
+	  <option value="Zombie">Zombie</option>
+	  <option {expr {[web::formvar class]=="Mercenary"?[web::put {selected="selected"}]:0}} value="Mercenary">Mercenary</option>
+	  <option  {expr {[web::formvar class]=="Survivor"?[web::put {selected="selected"}]:0}}  value="Survivor">Survivor</option>
+	  <option  {expr {[web::formvar class]=="Technician"?[web::put {selected="selected"}]:0}} value="Technician">Technician</option>
+	  <option  {expr {[web::formvar class]=="Medic"?[web::put {selected="selected"}]:0}} value="Medic">Medic</option>
+	 </select>
+	</p><p>
+	<label for="iAgree">I have read and agree to the <a target="_blank" href="./rules.ws3">site rules</a>:</label>
+	<input type="checkbox" name="iAgree" id="iAgree" value="iAgree" />
+	</p><br/><p>
+	<label for="iAgree2">Cheating and exploiting will burn my CPU and fail my HDD..</label>
+	<br/><br/>
+	<input type="checkbox" name="iAgree2" id="iAgree2" value="iAgree2" />
+	</p><p>
+	<br/>
+	<label for="humanTest">Calculate: <img src="{web::put [web::cmdurl Captcha]}" /> </label>
+	<input type="text" name="humanTest" id="humanTest" value="" size="4" maxlength="10" />
+	</p>
+	<br/>
+	<input type="submit" name="register" id="button" value="Register"  />
+	</fieldset>
+	</form>
+	}
+}
+proc ActivateUsername {} {
+	set errors ""
+	set username [web::param username]
+	set activationCode [web::param activationCode]
+	array set player [list username "" activationCode "" activated 0]
+	array set player [DatabaseFetchArray "SELECT username,activationCode,activated FROM LostPlayers where username='$username' and activationCode='$activationCode'"]
+	if {$player(username) == ""} { append errors "The combination of your username and activation code doesn't exist.<br/>" }
+	if {$activationCode != $player(activationCode)} { append errors "The activation code you used isn't the one we sent you.<br/>" }
+	if {$player(activated) == 1} { append errors "You already activated your username. Login and start playing:)" }
+	
+	if {[string length $errors] ==  0} {
+		DatabaseExec "UPDATE LostPlayers set activated=1 where username='$username'"
+		page "Username activated!" "" {
+			addLabel success "Your username $username has now been activated successfully!"
+			web::put "<a href=\"[web::cmdurl loginForm]\">Login</a> and start playing."
+		}
+	} else {
+		page "Activation failed" "" {
+			addLabel error $errors
+		} 
+	}
+}
+#############
+#Dispatching commands
+############
+web::command checkLogin {
+	# Initialize a fresh state.
+	InitSession
+	set username [web:post username]
+	set password [web:post password]
+	set errors ""
+	if {$username == "" || $password == ""} {  append errors "You must fill in all fields! Come on, it's not rocket science!<br/>" }
+	array set player [list username "" password "" level "" activated 0]
+	array set player [DatabaseFetchArray "SELECT username,password,level,activated FROM LostPlayers WHERE username='$username'"]
+	if {$player(username) == ""} {	append errors "<span class=\"bold\"> $username</span> doesn't exist...<br/>"	}	
+	if {![string match $player(password) $password] ^ [string match $player(password) [::md5::md5 -hex $password]]} { append errors "Uups, wrong password, please try again:)<br/>"} 
+	if {$player(level) == 1} {append errors "Your username has been banned, you cannot login.<br/>" }
+	if {$player(activated) == 0} { append errors "You need to activate your e-mail to be able to login" }
+	
+	#TODO Verify IP's and time from last login and either don't allow or forbid some things in game
+	if {[string length $errors] ==  0} {
+		set logintime [unixtime]
+		set ip [web::request REMOTE_ADDR]
+		set loginInfo [DatabaseQuery "select * FROM PlayersAdministration WHERE username='$username' and loginIP='$ip'"]
+		if {$loginInfo == ""} {
+			DatabaseExec "INSERT INTO PlayersAdministration  VALUES ('$username','$logintime','$ip')"
+		} else { DatabaseExec "UPDATE PlayersAdministration set loginTime='$logintime' where username='$username' and loginIP='$ip'" }
+		DatabaseExec "UPDATE LostPlayers set lastaction='$logintime' WHERE username='$username'"
+		state::cset username $username
+		LifeBeyond::cset username $username
+		#redirection.. best way.. also putting the session id (never know when we'll use it)
+		set encrypted [web::encryptd "sid [web::param sid]"]
+		
+		#Redirection
+		Redirect ./map.ws3?$encrypted
+	
+		#web::putx {<meta http-equiv="refresh" content="0;url=./map.ws3?{web::putx $encrypted}">}
+	} else {	
+	
+		page "Login page" "" {
+			addLabel error $errors
+			loginForm
+		}
+	}
+	SaveSession
+}
+
+web::command proccessRegistration {
+	# Initialize a fresh state.
+	InitSession
+	set username [web:post username]
+	set password [web:post password]
+	set rpassword [web:post rpassword]
+	set email [web:post email]
+	set remail [web:post remail]
+	set class [web:post class]
+	set iAgree [web:post iAgree]
+	set iAgree2 [web:post iAgree2]
+	set humanTest [web:post humanTest]
+	set humanTestAnswer [state::cget humanTestAnswer]
+	set ip [web::request REMOTE_ADDR]
+	set errors ""
+	if {$username == "" || $password == "" || $rpassword == "" || $email == "" || $remail == ""  || $class == ""} {
+		append errors "You must fill in all fields! Come on, it's not rocket science!"
+	}
+	#Continue this..
+	##set ipcount DatabaseExec "select count(created) from LostPlayers where regip='84.197.245.111' and created between $yesterday and $tomorrow 
+	set totalfromip [DatabaseQuery "SELECT count(regip) from LostPlayers WHERE regip='$ip'"]
+	if {$totalfromip >= 2} { append errors "<br>You can't register more than 2 users from the same IP! If you're from a VPN or School, please contact the administrator and notify him." } 
+	set exists [DatabaseQuery "SELECT username FROM LostPlayers WHERE username='$username'"]
+	if {[string tolower $exists] == [string tolower $username]} {	append errors "<br/> The username $username is already registered, please chose another or log in."	}
+	if {[string length $username] < 6 && [string length $password] < 6} { 
+		append errors "<br/>Your username and password must be at least 6 characters long. Username must be alphanumeric."
+	}
+	if {[string match -nocase "*$username*" "admin SYSTEM barricades building generator"]} { append errors "<br/>The username you have chosen is forbidden.. Chose another one!" }
+	if {[string match $password $rpassword] != 1} { append errors "<br/>Your passwords do not seem to match" }
+	if {[regexp {^[A-Za-z0-9._]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$} $email] != 1} { 
+		append errors "<br/>Your e-mail is not valid. Valid e-mail: my.example@domain.com"
+	}
+	if {[string match -nocase $email $remail] !=1} { append errors "<br/>Your e-mail addresses don't match!" }
+	set existsmail [DatabaseQuery "SELECT email FROM LostPlayers WHERE email='$email'"]
+	if {[string tolower $email] == [string tolower $existsmail]} { append errors "<br/>This e-mail is already registered.. sorry" }
+	if {$iAgree != "iAgree" && $iAgree != "iAgree2"} { append errors "<br/>Don't bother registering if you don't agree to the game rules!" }
+	if {![string match -nocase $humanTestAnswer $humanTest]} { append errors "<br/>The number you calculated is wrong, try again" }
+		if {[string length $errors] ==  0} {
+		set created [unixtime]
+		set town [lindex [DatabaseQuery "select Town from Towns"] 0]
+		set max [DatabaseQuery "select max(x) from Buildings where town='$town'"]
+		set randy [rnd 1 $max]
+		set randx  [rnd 1 $max]
+		
+		if {$class == "Zombie"} { set status Zombie } else { set status Alive }
+		DatabaseExec "INSERT INTO PlayersAccuracy VALUES('$username',0,0,0,0,0)"
+		DatabaseExec "INSERT INTO ZombieAttacks VALUES('$username',10,0,10,3,25,2)"
+		#Add the things for each starting class
+		switch $class {
+			Mercenary {
+				DatabaseExec "INSERT INTO Items (username,item,subitem,break,share) VALUES ('$username','Flak Jacket',0,0,0)"
+				DatabaseExec "INSERT INTO Items (username,item,subitem,break,share) VALUES ('$username','Knife',0,5,0)"
+				set encumbrance [DatabaseQuery "SELECT sum(encumbrance) from ItemsDesc where name='Knife' or name='Flak Jacket'"]
+			}
+			Technician {
+				DatabaseExec "INSERT INTO Items (username,item,subitem,break,share) VALUES ('$username','ToolBox',0,5,0)"
+				DatabaseExec "INSERT INTO Items (username,item,subitem,break,share) VALUES ('$username','Crowbar',0,5,0)"
+				set encumbrance [DatabaseQuery "SELECT sum(encumbrance) from ItemsDesc where name='ToolBox' or name='Crowbar'"]
+				#web::putx $encumbrance
+			}
+			Survivor {
+				DatabaseExec "INSERT INTO Items (username,item,subitem,break,share) VALUES ('$username','Baseball Bat',0,5,0)"
+				DatabaseExec "INSERT INTO Items (username,item,subitem,break,share) VALUES ('$username','Radio',0,0,0)"
+				set encumbrance [DatabaseQuery "SELECT sum(encumbrance) from ItemsDesc where name='Baseball Bat' or name='Radio'"]
+			}
+			Medic {
+				DatabaseExec "INSERT INTO Items (username,item,subitem,break,share) VALUES ('$username','First Aid Kit',0,0,0)"
+				DatabaseExec "INSERT INTO Items (username,item,subitem,break,share) VALUES ('$username','First Aid Kit',0,0,0)"
+				set encumbrance [DatabaseQuery "SELECT sum(encumbrance) from ItemsDesc where name='First Aid Kit' or name='First Aid Kit'"]
+			}
+			Zombie { 
+				DatabaseExec "INSERT INTO PlayerSkills VALUES ('$username','Vigour Mortis',0)" 
+				DatabaseExec "UPDATE ZombieAttacks SET ClawACC=ClawACC+10 where username='$username'"
+				set encumbrance 0
+			}
+		}
+		set activationCode [generateCode 13]		
+		#LEAVE this here, needs encumbrance to be set..
+		set md5Password [::md5::md5 -hex $password]
+		DatabaseExec "INSERT INTO LostPlayers (username,password,email,class,created,regip,x,y,town,status,encumbrance,activationCode,language) 
+		VALUES ('$username','$md5Password','$email','$class','$created','$ip','$randx','$randy','$town','$status','$encumbrance','$activationCode','en')"
+		
+		page "Registration successful!" "" {
+			addLabel info "An activation e-mail has been sent to your e-mail address. 
+				Please click the activation link to be able to start playing."
+			addLabel success "You have successfully registered the username <span class=\"bold\">$username</span>."
+		}
+		set activationLink [fullUrl ActivateUsername username $username activationCode $activationCode]
+		set mailmessage "Hello there <u>$username</u><br/><br/>
+		Welcome to <b>Life Beyond Apocalypse</b>. You can start playing in a few seconds after you have activated your account.<br/><br/>
+		If you did <b>NOT</b> register to <b>Life Beyond Apocalypse</b> then please ignore this e-mail and don't click the link below.<br/><br/>
+		Please click the link below to activate your account. If you can't click it, copy it to your browser. 
+		It's recommended to activate it <b>within</b> <u>24 hours</u> because it will be considered a spam account and get deleted otherwise.<br/><br/>
+		<a href=\"$activationLink\">$activationLink</a><br/><br/>
+		It's also very recommended that you save this e-mail or write down the following information.<br/>
+		Username: <b>$username</b><br/>
+		Password: <b>$password</b><br/>
+		
+		=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=<br/>
+		BE CAREFULL! NEVER give your password to ANYONE. We at LifeBeyondApocalypse.net DO NOT NEED your password.<br/>
+		Some people claim they will give you free items or that they have a program that helps you \"gain experience\" 
+		or that it can exploit the game. Don't accept any program as it will steal your password.<br/><br/>
+		If you recieved this e-mail it also means that you agreed to our Game Terms and Rules.
+		<br/><br/>
+		The LifeBeyondApocalypse team,<br/>
+		www.LifeBeyondApocalypse.net (shorthand at http://lba.im/)"
+		send_mail $email "Life Beyond Apocalypse registration" $mailmessage
+	} else {
+		page "Registration" "" {
+			addLabel warning $errors
+			regForm
+		}
+	}
+	#make session persistent (send form values)
+SaveSession
+}
+web::command lostPassword {
+	InitSession
+	page "Lost Password" "" {
+		lostPassword
+	}
+}
+web::command register {
+	# Initialize a fresh state.
+	InitSession
+	page "Registration" "" {
+		regForm
+	}
+}		
+web::command ActivateUsername {
+	InitSession
+	ActivateUsername
+}
+web::command logout {
+	InitSession
+	state::invalidate
+	LifeBeyond::invalidate
+	state::new
+	page "Logged out" "" {
+		web::putx {	<div class="success"> Logout successful. Thanks for playing, come back anytime.</div>}
+	}
+}
+web::command expired {
+	InitSession
+	page "Expired" "" {
+		web::putx {	<div class="error">Either you aren't allowed to login, or your session/cookie has expired. Please login again.</div>}
+		loginForm
+	}
+}
+web::command RestrictedAccess {
+	IsAuthenticated
+	page "Restricted Access - You are not allowed here" ""  {
+		addLabel error "Restricted Access - You are not allowed here. You do not have the required level to access this page. 
+		This attempt has been logged!"
+	}
+}
+web::command default {
+	# Initialize a fresh state.
+	InitSession
+   	page "Login page" "" {
+		loginForm
+	}
+}
+
+#use the footer instead, if errors.. use the dispatch from here
+#web::dispatch
+
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+} on error {bigError} { web::put "Some errors occured: $bigError"}

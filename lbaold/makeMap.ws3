@@ -1,0 +1,10 @@
+#Example using MySQL
+web::include [file dirname [web::config script]]/gamesys/databasefunctions.ws3 msg
+
+#TODO.. WEB INTERFACE!
+package require mysqltcl
+set lba [mysql::connect -host localhost -user lifebeyond -password ApocalYps3 -db lifebeyondapocalypse]
+
+web::put "started creating .."
+MakeNewMap Zombietown LostOne 100 100
+web::put "ended creating.."

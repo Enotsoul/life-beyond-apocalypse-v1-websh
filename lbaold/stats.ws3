@@ -1,0 +1,22 @@
+try {
+	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+
+#############
+#Dispatching commands
+#############
+::web::command default {
+	InitSession
+	page "Game statistics!" "" {
+		web::put "Some statistics..."
+	}
+}
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+
+} on error {bigError} { web::put "Some errors occured: $bigError"}

@@ -1,0 +1,99 @@
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+
+#############
+#Misc Procedures
+#############
+proc SearchItem {} {
+	global errors 
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+
+	#TODO something so the link doesn't work without..
+	if {0} {
+	set search [web::formvar search]
+	if {$search == ""} { append errors [Lost:lang error_useForm] }
+}
+	if {[VerifyEnergy $LostPlayer(energy) 1]} {
+		eincr LostPlayer(energy) -1
+		set items [DatabaseQuery "SELECT ItemsChanceToFind.itemID,Name,ChanceFound FROM ItemsDesc,ItemsChanceToFind WHERE ItemsChanceToFind.itemID=ItemsDesc.itemID"]
+		set buildingStuff [DatabaseQuery "SELECT Buildings.Status,BuildingsDesc.Status,BuildingsDesc.type FROM Buildings,BuildingsDesc where (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.buildingtypeID=BuildingsDesc.id and Buildings.townID='$LostPlayer(townID)')"]
+		
+		set lit [expr {[string match -nocase "*powered*" $buildingStuff]?1.25:1}]
+		if {$lit == 1} {	set dark [expr {[string match -nocase "*dark*" $buildingStuff]?0.75:1}]		} else { set dark 1 }
+		set ruined [expr {[string match -nocase "*ruined*" $buildingStuff]?0.75:1}]
+		
+		#Skills handling done here
+		set skills [DatabaseQuery "SELECT Skills.skill from PlayerSkills,Skills WHERE PlayerSkills.userID='$LostPlayer(userID)' and PlayerSkills.skillID=Skills.skillID"]
+		set looting [expr {[lsearch -nocase $skills "Looting"] >= 0 ?  0.75 : 1}]
+		set recycler [expr {[lsearch -nocase $skills "Recycler"] >= 0 ?  yes : no}]
+		set isRubble [string match -nocase "*Rubble*" $buildingStuff]
+		#TODO exclude dark if it's powered
+
+		#Functions for getting the item.. needed
+		set nrItem  [rnd 0 [expr {[llength $items]/3-1}]]
+		
+		#Rewritten so we don't do a foreach for all items anymore..
+		set itemID [lindex $items [expr {$nrItem*3}]]
+		set itemName [lindex $items [expr {$nrItem*3+1}]]
+		set chanceItem [lindex $items [expr {$nrItem*3+2}]]
+
+		#Check if the user has the recycler skill and is in a rubble..
+		if {$recycler == yes && $isRubble} { 
+			set chanceItem [expr {round($chanceItem*1.1)}]
+		}
+	
+		if {[string match -nocase "*none*" $itemName]} { append errors [Lost:lang error_nothingToSearch]  }
+		
+		#Upperbound can be between 50 and 100.. let's keep it 100:D
+		set chanceToFind [rnd 1 100]
+		#Ruined*Dark*Lit*ChanceItem/(double(100)*Looting)*100
+		set chanceFound [expr {$ruined*$dark*$lit*$chanceItem/(double(100)*$looting)*100}]
+		#web::put "chance to find: $chanceToFind and chanceFound: $chanceFound item itself: $Item  $ruined*$dark*$lit*$ChanceItem "
+
+		if {$chanceToFind > $chanceFound} {
+			append errors  [Lost:lang error_nothingFound]
+		} else { 
+			#FIXED set the encumbrance and if it's above 100, remove it afterwards so the encumbrance doesn't get set if you don't get the item
+			set itemEncumbrance [DatabaseQuery "SELECT encumbrance from ItemsDesc where itemID='$itemID'"]
+			eincr LostPlayer(encumbrance) $itemEncumbrance
+			if {$LostPlayer(encumbrance) > 100} { append errors [Lost:lang error_maxEncumbrance $itemName] ;  eincr LostPlayer(encumbrance) -$itemEncumbrance }
+			incr LostPlayer(exp) 1 
+		}
+		set LostPlayer(lastAction) [unixtime]
+		#TODO.. a little change..? a function that checks the energy and only takes 1 hp at every 2 actions..?
+		if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+		DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastAction)', exp='$LostPlayer(exp)', encumbrance='$LostPlayer(encumbrance)',health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+ 
+	} 
+	
+	if {[string length $errors] ==  0} {
+		DatabaseExec "INSERT INTO Items (itemID,userID,subitem,break,share) VALUES ('$itemID','$LostPlayer(userID)',0,10,0)"
+		set success  [Lost:lang foundItem [list $itemName]] 
+		web::putx {
+			 var serverObj =  { <? simpleObject html "[ItemImage $itemName] $success " success $success  ?> }
+		}
+	} else  {
+		web::putx {		var serverObj =  { <? simpleObject html "$errors " error $errors   ?> }		}
+	}
+	#GlobalVar::carray set LostPlayer [array get LostPlayer]
+}
+#############
+#Dispatching commands
+#############
+web::command default {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		DisplayMap
+		SaveSession
+	}
+}
+web::command searchItems {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		SearchItem 
+		SaveSession
+	}
+}
+#Include & End
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg

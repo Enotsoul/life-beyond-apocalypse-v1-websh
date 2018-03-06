@@ -1,0 +1,110 @@
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+
+web::command default {
+	if {[IsAuthenticated]} {
+		page "qTip, jquery & javascript animation stuff page"  {
+
+		if {0} {
+			SelectThingsNeeded
+			array set LostPlayer [GlobalVar::carray get LostPlayer]
+			set buildings [DatabaseQuery "select BuildingsDesc.type,Buildings.status from Buildings,BuildingsDesc
+			where BuildingsDesc.id=Buildings.buildingtypeID  and Buildings.townID='$LostPlayer(townID)' ORDER BY y asc, x asc" ]
+			array set townInfo [DatabaseFetchArray "SELECT max(y) as y ,max(x) as x from Buildings,BuildingsDesc
+			where BuildingsDesc.id=Buildings.buildingtypeID  and Buildings.townID='$LostPlayer(townID)'" ]
+			
+			web::put [array get townInfo]
+			web::putx {<table id="map" cellspacing="0"><tr>}
+			set y 1; set x 1;
+			foreach {type status} $buildings {
+				
+				if {$x == $LostPlayer(x) && $y == $LostPlayer(y)} {
+					web::putx {<td title="<? web::put "$x,$y - $type - $status" ?>" x='<? web::put "$x" ?>' y='<? web::put "$y" ?>' class="currentLocation"></td>}	
+				} else {	web::putx {<td title="<? web::put "$x,$y - $type - $status" ?>" x='<? web::put "$x" ?>' y='<? web::put "$y" ?>' ></td>}		}
+				
+				incr x
+				if {$x>$townInfo(x)} {
+					incr y ; set x 1;
+					web::put </tr><tr>
+				}
+			}
+			web::putx {</table>}
+		}
+			foreach {money} {15000 25000 10000 50000 65000 70000} {
+
+			}
+			
+
+			web::putx {
+			<span  title="smileeee">Hello there!</span>
+			<a href='#' id="gigi" title="Gigi in tha house!">Becali?</a>
+			<div id="dialog" title="Basic dialog">
+				<p>Hi there:)! This is for testing purpose for the modal dialogue & others</p>
+			</div>
+			<div id="mydata">Empty..</div>
+
+					}
+
+			set theMan "Gigi Becali"
+
+		} {
+
+			$( "#dialog" ).dialog({
+				autoOpen: false,
+				show: "blind",
+				hide: "explode"
+			});
+
+			$( "#gigi" ).click(function() {
+				$( "#dialog" ).dialog( "open" );
+				var data = {};
+				data['name'] = 'LostOne';
+				data['time'] = 'What time?';
+				//caching off for firefox.. bug in post operations
+				loadingAjax('#dialog',"POST",'<? web::put [newUrl qtip.ws3 postExample] ?>',{"nick" : "LostOne","name" : "Andrei"});
+				//theAjax('#dialog','POST','<? web::put [newUrl qtip.ws3 postExample] ?>','nick=LostOne&name=Andrei');
+			
+			}).button();
+			$('td').click(function() { bb.debug("Clicked!" +  $(this).attr('x') + "," + $(this).attr('y')); })
+			$('#map td').hover(function() { $(this).addClass('hover'); },function() { $(this).removeClass('hover'); })
+			$('td[title]').tooltip({ position: "bottom right", opacity: 0.9,delay:0});	
+		}
+	}
+}
+
+
+web::command getExample {
+	after 1000
+	set awesome [web:get awesome]
+	
+	web::putx {	
+		var serverObj = {
+			<? simpleObject  html "<div>Alalalalala</div>" ?>
+			error: {
+				<? simpleObject  er {SOmeone made a  <div style="color: ForestGreen;">$0</div>}    er2 {Seriously.. someone did make a  booboo} ?>
+			},
+			warning: {
+				er2:"oh dude..come on!"
+			},
+			notice: {
+				er2:"oh dude..come on!"
+			},
+			success: {
+				er2:"Becali e un ciobaaneeel!"
+			}, 
+		}
+	}
+
+}
+
+web::command postExample {
+	set name [web:post name]
+	set name2 [web:post nick]
+	web::putx {var serverObj = {	<? simpleObject  html "$name	is trying to be awesome... but isn't working allright..' and how about $name2" ?>}}
+}
+web::command redirectMe {
+	after 777
+	Redirect ./index.ws3
+}
+#Include footer
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+

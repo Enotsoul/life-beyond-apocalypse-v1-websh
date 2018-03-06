@@ -1,0 +1,137 @@
+/*  
+Theme Name: WordPress theme 294
+Theme URL: http://wordpress.org/
+Description: A theme from Template-Help.com Collection 
+Version: 2.1
+Author: Template_Help.com 
+Author URL: http://www.Template-Help.com/ 
+*/
+
+/* CSS Document */
+
+* { margin:0; padding:0; }
+body{ background:#CCCCCC url(images/tall-r.gif) repeat-x top; }
+html, body { height:100%; }
+html, input, textarea { font-family:Arial; font-size:11px; line-height: 1.8em; color:#525252; }
+input, select { vertical-align:middle; font-weight:normal;}
+a {color: #2A5A76; }
+a:hover{ text-decoration:none; }
+a img { border:0;}
+p { margin:0px; padding: 0px 0px 10px 0px; }
+ol, ul { margin-left: 20px; margin-bottom: 10px; }
+ul { list-style: square; }
+li { margin-left:10px; margin-top:7px; }
+ul li {  }
+
+.column { float:left; }
+.clear { clear:both; }
+
+
+h1 { color:#3F3F3F; font-family:Arial, Helvetica, sans-serif; font-size:2.11em; font-weight:normal;}
+h1#title a {color:#3F3F3F; text-decoration:none;}
+h2 { color:#E13400; font-family:Arial, Helvetica, sans-serif; font-size:1.7em; font-weight:normal;}
+h3 { color:#525252; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; font-weight:normal;}
+h4 { color:#E13400; font-family:Arial, Helvetica, sans-serif; font-size:1.3em; font-weight:bold;}
+
+
+#tall { width:100%; min-height:100%; background:url(images/tall.gif) repeat-y;}
+#header { height:334px; background:url(images/top.jpg) no-repeat left top;}
+#header .indent { padding: 10px 0 0 33px;}
+#header span { color:#9C9C9C; }
+#contentcol { width: 60%; }
+
+
+#footer { padding:20px 15px 15px 50px; color:#8F8F8F;}
+#footer a { color:#4B85BE;}
+
+/* side bar */
+.search { padding:5px 10px 15px 9px;}
+.search h2 { color:#4B4B4B; font-weight:bold; font-size:1.01em; text-transform:uppercase;}
+.search input { width:151px; border-color:#CECECE; border-bottom-width:1px;padding-top:2px; padding-bottom:2px; margin-top:6px;}
+.search .input { width:59px; height:17px; padding:0; margin:5px 0px 0px 92px; border:none;}
+
+#tags a { color: #3F3F3F; }
+
+#side_bar_right, #side_bar_left { width:220px;}
+#side_bar_left .indent { padding:5px 12px 5px 17px;}
+#side_bar_right .indent { padding:10px 20px 5px 16px;}
+#side_bar_right .search input { width:120px; border-color:#CECECE; border-bottom-width:1px;padding-top:2px; padding-bottom:2px; margin-top:6px;}
+#side_bar_right .search .input { width:59px; height:17px; padding:0; margin:5px 0px 0px 62px; border:none;}
+
+.h_l { background:url(images/h-l.gif) repeat-x; height:1px; margin:0 0 12px 0;}
+.widget_style { padding-left:15px;}
+.widget_style h2 { color: #E13400; font-size: 1.31em; font-weight: bold; }
+.widget_style ul { margin:15px 0px 14px 4px; list-style:none;}
+.widget_style li { color:#646464; margin-top:3px; background:url(images/a1.gif) no-repeat 0px 5px; padding-left:15px; }
+.widget_style li a { color:#646464; text-decoration:none;}
+.widget_style li a:hover { text-decoration:underline;}
+
+.postmetadataalt { font-size:0.81em;  }
+.pagetitle { 	color:#ccc; font-size:1.31em; font-weight:bold; padding:10px; float: right; }
+.article { padding:0px 0px 0px 0px; }
+.post { padding:0px 10px 0px 10px; }
+.PostTime { color:#999999; font-size:14px; font-weight:bold; letter-spacing:-1px; }
+
+
+#recent-comments, #recent-posts, #calendar, #google-search, #pages, #text-1, #delicious { vertical-align:top; }
+#gsearch, #delicious-box { text-align:left; }
+#calendar_wrap { vertical-align:top; padding:15px 0px 14px 4px; }
+#calendar_wrap a { text-decoration:underline; font-weight:bold; }
+#calendar_wrap a:hover { text-decoration:none; }
+
+.textwidget { text-align:left; padding:15px 0px 14px 4px; }
+.navigation {padding:0px 0px 10px 0px; display:table; width:100%;}
+
+.alignleft { float:left; }
+.alignright { float:right; }
+
+.column .navigation .alignleft { width:40%; color:#353535; padding-left:18px; }
+.column .navigation .alignright { width:40%; text-align:right; color:#353535; padding-right:18px;}
+.column .alignleft a { font-size:1.01em; font-weight:bold;}
+.column .alignright a { font-size:1.01em; font-weight:bold;}
+
+
+#statusbar { padding:15px 0px 14px 4px; text-align:justify; }
+#statusbar a { text-decoration:underline; font-weight:bold;}
+#statusbar a:hover { text-decoration:none; }
+
+/* side bar end*/
+
+#content { border:#C4C4C4 solid 1px; background:#FFFFFF; width:100%;}
+#content .block { padding:5px; margin-bottom: 55px; }
+
+
+h3 a {color:#E13400; text-decoration:none;}
+
+.title h3 { color:#353535; text-transform:uppercase; font-size: 1.7em; font-weight: bold;}
+
+#content .indent { padding:21px 15px 16px 16px;}
+#content .content_text { width:100%;}
+#content .h_l { background:url(images/h-l1.gif) repeat-x; height:1px; margin:20px 0px 15px 0px;}
+#content .comment { background:url(images/comment.gif) no-repeat top left; padding-left:20px; color:#353535; }
+#content .search input { width:230px; border-color:#CECECE; border-bottom-width:1px;padding-top:2px; padding-bottom:2px;}
+#content .search .input { width:59px; height:17px; padding:0; margin:0px 0px 0px 10px; border:none;}
+
+#relevance { background-color: #f8f8f8; border: 1px solid #ddd; margin: 10px; padding: 10px; }
+#relevance .cols { width: 30%; float: left; }
+#relevance .cols h3 { font-size: 1.5em; color: #E13400; }
+
+h3#comments,h3#respond { font-size: 1.3em; }
+ol.commentlist { list-style: none; margin: 0px 0px 25px 0px; } 
+ol.commentlist li { padding: 0px;}
+ol.commentlist li div.commentblock { background-color: #f4f4f4; padding: 10px; border-bottom:1px solid #DBDDDF; clear:both; }
+ol.commentlist li cite, ol.commentlist li cite a { color:#E13400; font-weight: bold; text-decoration: none; }
+ol.commentlist li cite { font-size: 1.5em; background: transparent url(images/comment.gif) no-repeat top left; padding-left: 20px; }
+ol.commentlist li p { padding: 5px 0px; }
+
+
+
+TABLE.zebra { width: 100%; border-collapse: collapse; }
+TABLE.zebra TFOOT TH,
+TABLE.zebra THEAD TH,
+TABLE.zebra THEAD TD { padding: 2px 6px; border: 1px solid #ddd; background-color: #b21b00; color: #fff; font-weight: bold; text-align-left; }
+TABLE.zebra TH,
+TABLE.zebra TD { padding: 2px 6px; border: 1px solid #ddd; text-align-left; font-weight: normal; }
+TABLE.zebra TBODY TR.alternate TH,
+TABLE.zebra TFOOT TR.alternate TD,
+TABLE.zebra TBODY TR.alternate TD { background-color: #f0f0f0; }

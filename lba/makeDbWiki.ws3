@@ -1,0 +1,22 @@
+try {
+#Example using MySQL
+web::include [file dirname [web::config script]]/gamesys/databasefunctions.ws3 msg
+
+#Edit ONLY if you know what you're doing
+#load ./libsqlite3.6.so Sqlite3
+package require sqlite3
+
+#2 databases? 1 for read and another for writing
+web::put [file dirname [web::config script]]/gamesys/WikiDatabase.sqlite
+sqlite3 WikiDB  [file dirname [web::config script]]/gamesys/WikiDatabase.sqlite
+# LostPlayers
+#PageInfo 
+WikiDB eval {CREATE TABLE PageInfo(PageId INTEGER PRIMARY KEY autoincrement, PageName TEXT COLLATE NOCASE, PageType INT DEFAULT 0, Creator TEXT COLLATE NOCASE, CreationTime INT DEFAULT 0, EditRights INT DEFAULT 1, EditorsList TEXT)}
+#PageData
+WikiDB eval {CREATE TABLE PageData(PageModification INTEGER, PageName TEXT COLLATE NOCASE , PageContent BLOB, LastModification INT DEFAULT 0, LastAuthor TEXT, LastIP TEXT, PRIMARY KEY (PageName, PageModification))}
+#Usernames
+WikiDB eval {CREATE TABLE Usernames(username TEXT PRIMARY KEY COLLATE NOCASE, PagesCreated INT DEFAULT 0, PagesEdited INT DEFAULT 0)}
+
+WikiDB close
+web::put "wiki DB created successfully!"
+} on error {myerror} {web::put "There was an error: $myerror <br/><br/> $errorInfo"}

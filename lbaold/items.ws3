@@ -1,0 +1,252 @@
+
+try {
+	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+proc dropItem {} {
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set Item [web::formvar item]
+	set itemExists [DatabaseQuery "Select item from Items where username='$LostPlayer(username)' and item='$Item'"]
+	set encumbrance [DatabaseQuery "select encumbrance from ItemsDesc where name='$Item'"]
+	
+	if {$itemExists == ""} { append errors [Lost:lang items_cantDrop] } 
+	if {[string length $errors] ==  0} {
+		DatabaseExec "DELETE FROM Items WHERE username='$LostPlayer(username)' and item='$Item' LIMIT 1;"
+		DatabaseExec "UPDATE LostPlayers set encumbrance=encumbrance-$encumbrance where username='$LostPlayer(username)'"
+		DisplayMap  {
+			addLabel success "[Lost:lang items_droppedOk]  <span class=\"bold\"> $Item </span>."
+		}
+	} else { DisplayMap }
+
+}
+
+
+proc useItem {} {
+	global errors
+	#Get everything from the post, use our function
+	set Item [web:post item]
+	set Player [web:post healWho]
+	#Define variables..
+	array set LostPlayer [GlobalVar::carray get LostPlayer]		
+	
+	if {[VerifyEnergy $LostPlayer(energy) 1]} {
+		incr LostPlayer(energy) -1
+		set itemExists [DatabaseQuery "Select id,item,subitem from Items where username='$LostPlayer(username)' and item='$Item'"]
+		set encumbrance [DatabaseQuery "select encumbrance from ItemsDesc where name='$Item'"]
+		set skills [DatabaseQuery "SELECT skill FROM PlayerSkills where username='$LostPlayer(username)'"]
+
+		if {$itemExists == ""} { append errors [Lost:lang items_dontHave] } 
+		#TODO  Switching between ALL the items
+		
+		set extraMsg " [Lost:lang items_youveUsed]  <span class=\"bold\"> $Item </span>."
+		set useCurrentItem yes
+		
+		if {[string length $errors] ==  0} {
+			switch -nocase $Item {
+				"First Aid Kit" { 
+					set heal 10
+					
+					if {[string match -nocase "*Healing*" $skills] == 1} { incr heal 5 }
+					if {[string match -nocase "*Imunity System*" $skills] && $LostPlayer(username) == $Player} { 
+						set LostPlayer(infected) 0  
+						append extraMsg [Lost:lang items_healedYourInfection]
+					}
+					#TODO Check if in lit hospital, +5 healing
+					DatabaseExec "UPDATE LostPlayers set health=health+$heal,infected='$LostPlayer(infected)' where username='$Player' and health<100"
+					
+					if {$LostPlayer(username) != $Player} {
+						append extraMsg " [Lost:lang items_youHealed] $Player $heal [Lost:lang hp]."
+						set msg [mysql::escape "[Lost:lang items_youBeenHealed] $heal [Lost:lang hp] [Lost:lang by] $LostPlayer(username)."]
+						incr $LostPlayer(exp) 3
+						set time [unixtime]
+						DatabaseExec "INSERT INTO Messages (fromUser,toUser,msg,msgTime,readMsg) VALUES('SYSTEM','$Player','$msg','$time',0)"
+					} else { 
+						incr $LostPlayer(exp) 1
+						append extraMsg " [Lost:lang items_healedYourself] $heal [Lost:lang hp]."
+					}
+				}
+				"Pistol" {
+					#set useCurrentItem no
+					set extraMsg "[Lost:lang items_reloadedPistol]" 
+					unset Item
+					set encumbrance 1
+					set Item [DatabaseQuery "Select item from Items where username='$LostPlayer(username)' and item='Pistol Clip' LIMIT 1"]
+					
+					if {$Item == ""}  { append errors [Lost:lang items_dontHavePistolClip] }
+					#Check if it isn't already loaded:)
+					if {[lindex $itemExists 2] != 0} { append errors [Lost:lang items_useAllBullets] }
+					
+					if {[string length $errors] ==  0} {
+						set itemId [lindex $itemExists 0]
+						DatabaseExec "UPDATE Items SET subitem='6' WHERE id='$itemId'"
+						set Item "Pistol Clip"
+					}
+				}
+				"Shotgun" {
+					#set useCurrentItem no
+					set extraMsg [Lost:lang items_reloadedShotgun] 
+					unset Item
+					set encumbrance 1
+					set Item [DatabaseQuery "Select item from Items where username='$LostPlayer(username)' and item='Shotgun Shells' LIMIT 1"]
+					if {$Item == ""}  { append errors [Lost:lang items_dontHaveShells]  }
+					
+					#Check if it isn't already loaded:)
+					if {[lindex $itemExists 2] != 0} { append errors [Lost:lang items_useAllShells] }
+					
+					if {[string length $errors] ==  0} {
+						set itemId [lindex $itemExists 0]
+						DatabaseExec "UPDATE Items SET subitem='2' WHERE id='$itemId'"
+						set Item "Shotgun Shells"
+					}
+				}
+				
+				Chainsaw { 
+					#set useCurrentItem no
+					set extraMsg [Lost:lang items_refuledChainsaw]
+					unset Item
+					set encumbrance 1
+					set Item [DatabaseQuery "Select item from Items where username='$LostPlayer(username)' and item='Fuel Canister' LIMIT 1"]
+					
+					if {$Item == ""}  { append errors [Lost:lang items_noFuelCanForChainsaw] }
+					#Check if it isn't already loaded:)
+					if {[lindex $itemExists 2] != 0} { append errors [Lost:lang items_chainsawNotEmpty] }
+					
+					if {[string length $errors] ==  0} {
+						set itemId [lindex $itemExists 0]
+						DatabaseExec "UPDATE Items SET subitem='20' WHERE id='$itemId'"
+						set Item "Pistol Clip"
+					}
+				}
+				Teaser { DatabaseExec "UPDATE Items SET subitem=subitem-$attTimes WHERE id='$weapon(id)'" }
+
+				Book {
+				#"25% chance of getting 1 Xp(2 xp for Medics)  5% chance to be finished"
+					incr LostPlayer(energy) -1
+					if {[rnd 0 100] <= 25} { 
+						set extraMsg [Lost:lang items_bookKnowledge] 
+						if {$LostPlayer(class) == "Medic"} {
+							incr LostPlayer(exp) 2
+						} else  {  incr LostPlayer(exp) 1 }
+					} else {  
+						set extraMsg [Lost:lang items_bookRubbish]
+					}
+					if {[rnd 1 10] == 3}  { 
+						set useCurrentItem yes 
+						append extraMsg [Lost:lang items_bookFinished]
+					} else { 	set useCurrentItem no	 }
+				}
+				#AddItems "Radio Transmitter" 18	"Sending radio transmissions 300 chars long"
+				#AddItems "Portable Generator" 18 "Used for equipment in some buildings powers buildings with energy for 5 real days per fuel canister. Can be damaged, each succesfull dmg takes 1 point.. 10 points.  5xp for destroyer(zombie) + 1AP/1E for repairing"
+				#DatabaseExec "CREATE TABLE Buildings(id INTEGER PRIMARY KEY auto_increment, Town VARCHAR(250), x INT, y INT, type VARCHAR(250), name VARCHAR(250), description TEXT, damage INT, status VARCHAR(250), barricades INT, radiationLevel INT, hasGenerator INT DEFAULT 0, hasTransciever INT DEFAULT 0, generatorTime INT DEFAULT 0)"
+
+				"Portable Generator" {
+					if {$LostPlayer(inbuilding) == 1} { 
+						array set Building [DatabaseFetchArray "select * from Buildings where (x='$LostPlayer(x)' and y='$LostPlayer(y)') and Buildings.Town='$LostPlayer(town)'"]
+						if {$Building(hasGenerator) > 0} { append errors "[Lost:lang items_buildingHasGenerator]<br/>" }
+						if {![string match "*Electrical equipment*" $skills]} {  append errors [Lost:lang items_skillForGenerator] }
+					} else { append errors [Lost:lang items_beInsideForItem generator] }
+		
+					if {[string length $errors] ==  0} {
+						DatabaseExec "UPDATE Buildings SET hasGenerator=10,status='powered',generatorTime=24 WHERE (x='$LostPlayer(x)' and y='$LostPlayer(y)') and Buildings.Town='$LostPlayer(town)'"
+						set time [unixtime]
+						set msg [Lost:lang items_someoneSetupGenerator]
+						DatabaseExec "INSERT INTO LocalMsg (fromUser,inbuilding,town,x,y,msg,msgTime) VALUES('$LostPlayer(username)','$LostPlayer(inbuilding)','$LostPlayer(town)','$LostPlayer(x)','$LostPlayer(y)','$msg','$time')"
+						set extraMsg [Lost:lang items_youSetupGenerator] 
+					}
+				}
+				"Radio Transmitter" {
+					append errors [Lost:lang items_notWorkingYet] 
+					if {$LostPlayer(inbuilding) == 1} { 
+						array set Building [DatabaseFetchArray "select * from Buildings where (x='$LostPlayer(x)' and y='$LostPlayer(y)') and Buildings.Town='$LostPlayer(town)'"]
+						if {$Building(hasTransciever) > 0} { append errors [Lost:lang items_noTranscieverInBuilding] }
+						if {![string match "*Electrical equipment*" $skills]} {  append errors [Lost:lang items_skillForTransciever] }
+					} else { append errors [Lost:lang items_beInsideForItem "Radio transciever"] }
+		
+					if {[string length $errors] ==  0} {
+						DatabaseExec "UPDATE Buildings SET hasTransciever=10 WHERE (x='$LostPlayer(x)' and y='$LostPlayer(y)') and Buildings.Town='$LostPlayer(town)'"
+						set time [unixtime]
+						set msg [Lost:lang items_someoneSetupTransciever]
+						DatabaseExec "INSERT INTO LocalMsg (fromUser,inbuilding,town,x,y,msg,msgTime) VALUES('$LostPlayer(username)','$LostPlayer(inbuilding)','$LostPlayer(town)','$LostPlayer(x)','$LostPlayer(y)','$msg','$time')"
+						set extraMsg [Lost:lang items_youSetupTransciever]
+					}
+				}
+				"Fuel Canister" {
+					if {$LostPlayer(inbuilding) == 1} { 
+						array set Building [DatabaseFetchArray "select * from Buildings where (x='$LostPlayer(x)' and y='$LostPlayer(y)') and Buildings.Town='$LostPlayer(town)'"]
+						if {$Building(hasGenerator) <= 0} { append errors [Lost:lang items_noGeneratorToRefuel] }
+					} else { append errors [Lost:lang items_noCarToRefuel]  }
+		
+					if {[string length $errors] ==  0} {
+						DatabaseExec "UPDATE Buildings SET status='powered',generatorTime=72 WHERE (x='$LostPlayer(x)' and y='$LostPlayer(y)') and Buildings.Town='$LostPlayer(town)'"
+						set time [unixtime]
+						set msg  [Lost:lang items_someoneRefuledGenerator] 
+						DatabaseExec "INSERT INTO LocalMsg (fromUser,inbuilding,town,x,y,msg,msgTime) VALUES('$LostPlayer(username)','$LostPlayer(inbuilding)','$LostPlayer(town)','$LostPlayer(x)','$LostPlayer(y)','$msg','$time')"
+						set extraMsg [Lost:lang items_youRefuledGenerator]  
+					}
+				}
+				"Mobile Phone" {
+					set useCurrentItem no
+					Redirect communication.ws3
+				}
+				"Antidote" {
+					DatabaseExec "UPDATE LostPlayers set infected=0 where username='$LostPlayer(username)'"
+					set extraMsg [Lost:lang items_antidoteCuredYou]   
+				}
+				default { append errors  [Lost:lang items_functionInAlpha]  }
+			}
+		}
+		#Save it back
+	}
+	
+	if {[string length $errors] ==  0} {
+		#Only delete if it's really necessary.. TODO maybe delete only each item you use
+		if {$useCurrentItem == yes} {
+			DatabaseExec "DELETE FROM Items WHERE username='$LostPlayer(username)' and item='$Item' LIMIT 1;"
+			DatabaseExec "UPDATE LostPlayers set encumbrance=encumbrance-$encumbrance,exp=$LostPlayer(exp) where username='$LostPlayer(username)'"
+		} else {
+			#If you don't use the current item, do something else..
+		}
+		DisplayMap  {	addLabel success $extraMsg }
+		GlobalVar::carray set LostPlayer [array get LostPlayer]
+	} else { DisplayMap }
+	GlobalVar::carray set LostPlayer [array get LostPlayer]
+
+}
+
+#############
+#Dispatching commands
+#############
+web::command default {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		DisplayMap 
+		SaveSession
+	}
+}
+web::command dropItem {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		dropItem
+		SaveSession
+	}
+}
+web::command useItem {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		useItem
+		SaveSession
+	}
+}
+
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+
+} on error {bigError} { web::put "Some errors occured: $bigError"}

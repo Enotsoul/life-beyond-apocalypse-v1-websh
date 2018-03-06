@@ -1,0 +1,143 @@
+try {
+	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+proc Manufacturing {} {
+	page "Manufacturing" "" {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set userSkills [DatabaseQuery "SELECT Skill FROM PlayerSkills WHERE username='$LostPlayer(username)'"]
+	#ItemName SkillRequired SuccessRate ExpGained EnergyUsed Tools produced
+	set manufacturing [DatabaseQuery "SELECT * FROM Manufacturing"]
+	#ItemName ItemNeeded Quantity
+	set manufacturingNeeds [DatabaseQuery "SELECT * FROM ManufacturingNeeds"]
+	set userItems [DatabaseQuery "SELECT Item FROM Items WHERE username='$LostPlayer(username)'"]
+	
+		web::putx "	<p>Manufacturing. For a complete list of all the items [newLink [web::cmdurl listItems] "click here" "target='_blank'"] </p>	"
+		
+	} { 
+		web::put ""
+	}
+}
+proc listItems {} {
+	page "Manufacturing - Items prequesitories" "" {
+		#ItemName SkillRequired SuccessRate ExpGained EnergyUsed Tools produced
+		set manufacturing [DatabaseQuery "SELECT * FROM Manufacturing"]
+		#ItemName ItemNeeded Quantity
+		set manufacturingNeeds [DatabaseQuery "SELECT * FROM ManufacturingNeeds"]
+		
+		web::put {	<p>Complete list of items you can create, and what you need for each Item. 
+				Please note that the manufacturing process may change in the future requiring YOU to chose each item 
+				from your inventory to mix. The way you can manufacture items now is just so you are able to play the game.</p>	}
+	} { 
+		web::put "<table border='1'><tr><th>Item</th><th>Skill required</th><th>Success%</th><th>Exp</th><th>Energy</th><th>Tools required</th><th>Quantity produced</th></tr>"
+		
+		foreach {ItemName SkillRequired SuccessRate ExpGained EnergyUsed Tools produced} $manufacturing {
+			web::put "<tr><td>$ItemName</td><td>$SkillRequired</td><td>$SuccessRate</td><td>$ExpGained</td><td>$EnergyUsed</td><td>$Tools</td><td>$produced</td><td>[newLink [web::cmdurl createItem item $ItemName] Create]</td></tr>"
+		}
+
+		set lastItem "none"
+		web::put "</table><table border='1'><tr><th>Item produced</th><th>Items needed</th><th>Qty</th></tr>"
+		#Create a table, and only put the name of the Item in the beginning
+		foreach {ItemName ItemNeeded Quantity} $manufacturingNeeds {
+			if {$lastItem != $ItemName} { 
+				set pos [lsearch $manufacturing $ItemName]
+				web::put "<tr><td>[boldSpan $ItemName]</td><td>$ItemNeeded</td><td>$Quantity</td></tr>"
+			 } else {
+				web::put "<tr><td></td><td>$ItemNeeded</td><td>$Quantity</td></tr>"
+			}
+			set lastItem $ItemName
+		}
+		web::put "</table>"
+	}
+}
+proc createItem {} {
+	set getItem [web:get item]
+	set errors ""
+
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set LostPlayer(lastaction) [unixtime]
+	array set Item [list ItemName ""]
+	array set Item [DatabaseFetchArray "SELECT * FROM Manufacturing WHERE ItemName='$getItem'"]
+	
+	if {$Item(ItemName) == ""} { append errors "That Item doesn't exist!" } else {
+		if {[VerifyEnergy $LostPlayer(energy) $Item(EnergyUsed)]} {
+			#ItemName SkillRequired SuccessRate ExpGained EnergyUsed Tools produced
+			#ItemName ItemNeeded Quantity
+
+			set userSkill [DatabaseQuery "SELECT Skill FROM PlayerSkills WHERE username='$LostPlayer(username)' and Skill='$Item(SkillRequired)'"]
+			
+			if {$userSkill == "" && ![string match -nocase $Item(SkillRequired) "none"]} { append errors "You need to have the $Item(SkillRequired) skill to be able to manufacture $Item(ItemName)" }
+			
+			set manufacturingNeeds [DatabaseQuery "SELECT ItemNeeded,Quantity FROM ManufacturingNeeds WHERE ItemName='$getItem'"]
+			#set userItems [DatabaseQuery "SELECT Item FROM Items WHERE username='$LostPlayer(username)'"]
+			set userItems [DatabaseQuery "SELECT Items.Item,ItemsDesc.encumbrance FROM Items,ItemsDesc WHERE Items.username='$LostPlayer(username)' and Items.Item=ItemsDesc.name"]
+			
+			#Search all the items in the list, count and tell the user
+			foreach {ItemNeeded Quantity} $manufacturingNeeds {
+				set qty [llength [lsearch -all $userItems $ItemNeeded]]
+				if {$qty<$Quantity} { append errors "You need $Quantity $ItemNeeded and you have ${qty}.<br/>"	}
+			}
+			foreach Tool $Item(Tools) {
+				set qty [llength [lsearch -all $userItems $Tool]]
+				if {$qty<1 && ![string match -nocase $Tool "none"]} { append errors "You need the $Tool tool to manufacture this item."	}
+			}
+			
+			set manufactureChance [rnd 1 100]
+			if {$manufactureChance > $Item(SuccessRate)} { 
+				append errors "You started working on $getItem but failed. You also used $Item(EnergyUsed) energy."  
+				 incr LostPlayer(energy) -[expr {$Item(EnergyUsed)-1}]
+			}
+		}
+	}
+	if {[string length $errors] ==  0} {
+		foreach {ItemNeeded Quantity} $manufacturingNeeds {
+			DatabaseExec "DELETE FROM Items WHERE username='$LostPlayer(username)' AND item='$ItemNeeded' LIMIT $Quantity"
+			incr encumbrance [expr {[lindex $userItems [lsearch $userItems $ItemNeeded]+1]}]
+		}
+		for {set i 0} {$i<$Item(produced)} {incr i} {
+			#The order is really important
+			append values "[expr {$i>0?",":""}]('$Item(ItemName)','$LostPlayer(username)',0,5,0)"
+		}
+		DatabaseExec "INSERT INTO Items (Item,Username,subitem,break,share) VALUES $values"
+		DatabaseExec "UPDATE LostPlayers SET energy=energy-$Item(EnergyUsed), lastaction='$LostPlayer(lastaction)' WHERE username='$LostPlayer(username)'"
+		page "Manufacturing - Item creation successful" "" {
+			addLabel success "You've created $Item(produced) ${getItem}[expr {$Item(produced)>1?"'s":""}]. You needed $Item(EnergyUsed) energy for this manufacturing but gained $Item(ExpGained) experience."
+			web::put "<a href=\"[web::cmdurl default]\">Create another one</a>."
+		}
+	} else {
+		page "Manufacturing - Failed :(" "" {
+			addLabel error $errors
+		} 
+		incr LostPlayer(energy) -1
+		DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastaction)' WHERE username='$LostPlayer(username)'"
+	}
+	
+}
+#############
+#Dispatching commands
+#############
+web::command default {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		listItems
+		SaveSession
+	}
+}
+web::command createItem {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		createItem
+		SaveSession
+	}
+}
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+
+} on error {bigError} { web::put "Some errors occured: $bigError"}
+

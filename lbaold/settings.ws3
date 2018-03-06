@@ -1,0 +1,118 @@
+try {	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+proc changePassword {} {
+	set opassword [web:post opassword]
+	set npassword [web:post npassword]
+	set rpassword [web:post rpassword]
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set errors ""
+	
+	if {$opassword == "" || $npassword == "" || $rpassword == ""} {	append errors [Lost:lang fillAllFields] }
+	if {![string match $npassword $rpassword]} { append errors [Lost:lang set_passwordsDontMatch] }
+	if {$opassword != $LostPlayer(password)} { append errors [Lost:lang set_incorrectOldPass] }
+	
+	if {[string length $errors] ==  0} {
+		set md5Password	[::md5::md5 -hex $npassword ]
+		DatabaseExec "UPDATE LostPlayers set password='$md5Password' where username='$LostPlayer(username)'"
+		page [Lost:lang set_successPassChange] "" {
+			addLabel success [Lost:lang set_newPassSaved]
+		}
+	}   else { page [Lost:lang set_changePassTitle] "" { addLabel error $errors ; changePasswordForm } }
+}
+proc changeLanguage {} {
+	set language [web:post lang]
+
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set errors ""
+	if {![string match  "*$language*" "en ro nl"]} { append errors [Lost:lang set_inexistentLang]  }
+	
+	if {[string length $errors] ==  0} {
+		DatabaseExec "UPDATE LostPlayers set language='$language' where username='$LostPlayer(username)'"
+		page [Lost:lang set_langChangedTitle] "" {
+			addLabel success [Lost:lang set_langChanged]
+		}
+	}   else { page [Lost:lang set_titleChangeLang] "" { addLabel error $errors ; changeLanguageForm } }
+}
+#Forms
+proc changePasswordForm {} {
+	web::putx {
+	<form method="post" action="{web::put [web::cmdurl changePassword]}" class="reg">
+	<fieldset>
+	<legend>{web::put [Lost:lang set_changePassword]}</legend>
+	<label for="opassword"> {web::put [Lost:lang set_oldPassword]}:</label>
+	<input type="password" name="opassword" id="opassword" value="" />
+	<br />
+	<label for="npassword">{web::put [Lost:lang set_newPassword]}:</label>
+	<input type="password" name="npassword" id="npassword" value="" />
+	<br />
+	<label for="rpassword">{web::put [Lost:lang set_retypePassword]}:</label>
+	<input type="password" name="rpassword" id="rpassword" value="" />
+	<br />
+	<input type="submit" name="resetPassword" id="button" value="{web::put [Lost:lang set_changePassword]}"  />
+	</fieldset>
+	</form>
+	}
+}
+proc changeLanguageForm {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	web::putx {
+	<form method="post" action="{web::put [web::cmdurl changeLanguage]}" class="reg">
+	<fieldset>
+	<legend>{web::put [Lost:lang set_changeLanguage]}</legend>
+	<p>{web::put "[Lost:lang set_yourCurrLang]  [string map {en English ro Română nl Nederlands} "$LostPlayer(language)"]"}</p>
+	 <select id="lang" name="lang" >
+	  <option value="en">English</option>
+	  <option value="ro">Română</option>
+	  <option value="nl">Nederlands</option>
+	  </select>
+	<input type="submit" name="changeLanguage" id="button" value="{web::put [Lost:lang set_changeLanguage]}" />
+	</fieldset>
+	</form>
+	}
+}
+
+#############
+#Dispatching commands
+#############
+web::command default {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		page [Lost:lang set_settingsTitle] "" {
+			web::put "<p>[Lost:lang set_settingsTitle]</p>"
+				changePasswordForm
+				changeLanguageForm
+		}
+		SaveSession
+	}
+}
+web::command changePassword {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		changePassword
+		SaveSession
+	}
+}
+web::command changeLanguage {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		changeLanguage
+		SaveSession
+	}
+}
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+	 
+} on error {bigError} { web::put "Some errors occured: $bigError"}
+
+
+
+
+

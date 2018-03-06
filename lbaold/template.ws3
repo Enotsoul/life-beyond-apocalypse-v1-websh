@@ -1,0 +1,160 @@
+web::include [file dirname [web::config script]]/gamesys/lang.ws3 msg
+proc page {title menu content {extendedContent ""}} {
+	global pageTime
+	web::putx {
+	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+	<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+	<head>
+		<title>Life Beyond Apocalypse  - { web::put "$title" }</title>
+		<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+		<meta name="description" content="Life Beyond Apocalypse is a free Browser Persistent Role Playing Game set out in the future after the world has been destroyed and zombies wonder around. 
+		You can play either a Zombie or one of the four Human classes (Technician, Survivor, Mercenary or Medic)." />
+		<meta name="keywords" content="Life Beyond Apocalypse, free online game, Zombie Game, Browser Zombie, end of world,  cool online game" />
+		<!---
+		<meta http-equiv="CACHE-CONTROL" content="NO-CACHE" />
+		<meta http-equiv="PRAGMA" content="NO-CACHE" />
+		-->
+		<!--- <script type="text/javascript" src="./jquery/jquery-1.4.2.js"></script>
+			  <script type="text/javascript" src="./jquery/jquery.validate.js"></script>
+		 -->
+	<script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js"></script>  
+	 <!--<script type="text/javascript" src="http://ajax.microsoft.com/ajax/jquery.validate/1.7/jquery.validate.js"></script>
+	<script src="./jquery/jquery.hoverIntent.js" type="text/javascript"></script> optional -->
+	<script src="./jquery/jquery.cluetip.js" type="text/javascript"></script>
+	<script src="./jquery/lifebeyond.js" type="text/javascript"></script>
+	<link rel="stylesheet" href="./jquery/jquery.cluetip.css" type="text/css" />	 
+	 <script type="text/javascript">
+	 }
+	
+	#web::include [file dirname [web::config script]]/jquery/jquery.ws3
+	
+	web::putx {
+		</script>
+		<link rel="stylesheet" type="text/css" href="./template.css" />
+		<link rel="icon" type="image/png" href="./images/favico.png" />
+	</head>
+	<body>
+	<div id="container">
+		<div id="header">
+			<div id="headleft">
+			<h1><span class="hidden">Life Beyond Apocalypse</span></h1>
+			<h2>{web::put "$title"}</h2>
+		</div>
+		<div id="headright">
+			{web::put [PutFlags]}
+			{if {[state::cexists username]} { {ShowStats} }}
+		</div>
+	}
+
+	#set files [glob -directory [file dirname [web::config script]] *]
+	#foreach file $files {
+		#set file [file tail $file]
+		#append links " <a href=\"./$file\">$file</a> |"
+	#}
+	#web::put $links
+		if {![state::cexists username]} { ShowMenuGuest } else { ShowMenuLogin }
+	web::putx {
+			</div>
+			<div id="subcontainer">
+				<div id="menu">
+	}
+	#web::put [file tail [web::config script]]
+	uplevel $menu
+	web::put {	</div> }
+	if {$content != ""} {
+		web::put {	<div id="content">}
+		#javascript warning
+		web::put "<noscript><div class=\"warning\">This site uses javascript for some effects and usefull functions for your user experience. 
+			While the site was built to work almost perfectly without javascript you may still want to enable it 
+			just in case to prevent problems. Don't worry, it doesn't contain any malicious content. Thank you. </div></noscript>"
+		uplevel $content
+		web::put {	</div> }
+	} 
+	if {$extendedContent != ""} {
+		web::put {	<div id="extendedContent"> }
+		uplevel $extendedContent
+		web::put {	</div> }
+	}
+	web::put {	</div><div id="footer">	}
+			ShowOnline
+	web::putx {
+			<p>Copyright 2010 &copy; <a href="{web::put [newUrl credits.ws3 lostone]}">LostOne</a> - <a href="http://lifebeyondapocalypse.net">LifeBeyondApocalypse.net</a></p>
+			<p> <a href="./credits.ws3">{web::put [Lost:lang credits]}</a> <a href="./rules.ws3">{web::put [Lost:lang gameRules]}</a> <a href="#">Your link here</a></p>
+			<p>Page processed and loaded in {web::put [expr {([clock milliseconds ] - $pageTime)/double(1000)}]} seconds.</p>
+			</div>
+		</div>
+	</body>
+	</html>
+	}
+}
+
+proc ShowMenuLogin {} {
+	web::putx {
+	<div class="misc" id="headmenu"> 
+	<ul>
+	<li> 
+	 <a href="{web::put [newUrl map.ws3]}" rel="map.ws3">{web::put [Lost:lang map]}</a>  | </li><li>  
+	 <a href="{web::put [newUrl profile.ws3]}">{web::put [Lost:lang profile]}</a> | </li><li>
+	 <a href="{web::put [newUrl players.ws3]}">{web::put [Lost:lang players]}</a> |  </li><li> 
+	 <a href="{web::put [newUrl communication.ws3]}">{web::put [Lost:lang mobileMail]}</a> | </li><li>
+	 <a href="{web::put [newUrl manufacturing.ws3]}">{web::put [Lost:lang manufacturing]}</a> | </li><li>
+	 <a href="{web::put [newUrl skills.ws3]}">{web::put [Lost:lang skills]}</a> | </li><li>
+	 <a href="{web::put [newUrl settings.ws3]}">{web::put [Lost:lang settings]}</a> | </li><li>
+	  <a href="{web::put [newUrl index.ws3 chat]}">{web::put [Lost:lang chat]}</a> | </li>
+	  </li>
+	 }
+	 if {[VerifyLevel 4]} { web::putx {  <a style="bold" href="{web::put [newUrl admin.ws3]}">{web::put [Lost:lang adminPanel]}</a>  | } } 
+	 web::putx {
+	 <a href="{web::put [newUrl wiki.ws3]}">{web::put [Lost:lang wiki]}</a> | 	 <a href="{web::put [newUrl auth.ws3 logout]}">{web::put [Lost:lang logout]}</a> 
+	</div>		
+	}
+}
+proc ShowMenuGuest {} {
+	web::putx {
+	<div id="headmenu" class="misc">  
+		<ul>
+		<li> 
+		 <a href="{web::put [newUrl index.ws3]}">{web::put [Lost:lang index]}</a> | </li><li>
+		  <a href="{web::put [newUrl stats.ws3]}">{web::put [Lost:lang statistics]}</a> |  </li><li>
+		  <a href="{web::put [newUrl wiki.ws3]}">{web::put [Lost:lang wiki]}</a>  | </li><li>
+		  <a href="{web::put [newUrl auth.ws3]}">{web::put [Lost:lang login]}</a>   | </li><li>
+		  <a href="{web::put [newUrl auth.ws3 register]}">{web::put [Lost:lang register]}</a>  | </li><li>
+		   <a href="{web::put [newUrl index.ws3 chat]}">{web::put [Lost:lang chat]}</a> </li>
+		</ul>
+	</div>		
+	}
+}
+proc ShowStats {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	web::put {<div class="misc">}
+	web::put "<h3>$LostPlayer(username)</h3>"
+	if {$LostPlayer(health)>[expr {$LostPlayer(maxhealth)*0.8}]} {
+		set hpStyle "lightgreen"
+	} elseif {$LostPlayer(health)>[expr {$LostPlayer(maxhealth)*0.5}]} {
+		set hpStyle "yellow"
+	} elseif {$LostPlayer(health)>[expr {$LostPlayer(maxhealth)*0.3}]} {
+		set hpStyle "orange"
+	} else {
+		set hpStyle "IndianRed" ; #red
+	}
+	web::putx {
+	<table style="text-align:left;">
+<tr><td>{web::put [Lost:lang energy]}:</td> <td class="bold">{web::put $LostPlayer(energy)/$LostPlayer(maxenergy)}</td>  
+	<td>{web::put [Lost:lang experience]}:</td> <td class="bold">{web::put "$LostPlayer(exp)/$LostPlayer(maxxp)"}</td></tr>
+	<tr><td>{web::put [Lost:lang health]}:</td> {web::put "<td><span style=\"color:$hpStyle\" class=\"bold\">$LostPlayer(health)</span>/$LostPlayer(maxhealth)"}</td> 
+	<td>{web::put [Lost:lang status]}:</td> <td class="bold">{web::put $LostPlayer(status)}</td> </tr> 
+	<tr><td>{web::put [Lost:lang weight]}:</td> <td>{web::put "$LostPlayer(encumbrance)%"}</td> 
+	<tr><td>{web::put [Lost:lang foodLevel]}:</td> <td class="bold">{web::put $LostPlayer(foodlvl)}</td> 
+	 <td>{web::put [Lost:lang waterLevel]}:</td> <td class="bold">{web::put $LostPlayer(waterlvl)}</td> </tr>
+	 </table> }
+	web::put {</div>}
+}
+proc ShowOnline {} {
+	web::putx {<div><span class="bold"> {web::put [Lost:lang onlinePlayers]}: </span>}
+	set timePast [clock add [clock seconds] -10 minutes]
+	set players [DatabaseQuery "SELECT username from LostPlayers where lastAction>$timePast"]
+	web::put $players
+	web::put {</div>}
+}

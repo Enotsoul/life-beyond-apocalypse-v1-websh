@@ -1,0 +1,831 @@
+#OBF
+#This contains functions that will be usefull.
+#Load packages we need
+#Log everything
+web::logfilter add *.-debug
+catch {file mkdir [file dirname [web::config script]]/gamesys/sup3rdup3rl0gs/}
+web::logdest add *.-debug file  [file dirname [web::config script]]/gamesys/sup3rdup3rl0gs/websh.log 
+
+#Log command
+proc logCommand {msg} {
+      web::put "An error occured"
+      web::put $msg
+}
+set pageTime [clock milliseconds]
+#Some packages
+package require md5
+package require Thread
+#md5crypt password apocalypse
+#Some settings
+web::config cmdparam ApocalYpsE
+web::cryptdkey noCool3rW4yTo
+
+#Includes we need..
+web::include [file dirname [web::config script]]/template.ws3 msg
+web::include [file dirname [web::config script]]/gamesys/databasefunctions.ws3 msg
+#This handles all the xhtml & styles  generation commands so we only focus on the actual programming in this file
+web::include [file dirname [web::config script]]/gamesys/xhtml.ws3 msg
+package require xhtml
+#############
+#Session Mamagement starts here
+proc StartSession {} {
+	# Define a memory context to hold some configuration variables.
+	web::context GlobalVar
+	#sessions directory
+	GlobalVar::cset stateDirectory /tmp/websh/lba/
+
+	# Create a file counter (only create one if the current interpreter does not already have one)
+	if {![llength [info commands idGenerator]]} {
+		web::filecounter idGenerator -filename [file join [GlobalVar::cget stateDirectory] counter] -seed 0 -incr 3
+	}
+
+	# Create a file context named 'state'. The option '-path' defines
+	# where the session contexts are stored. '-attachto' defines an
+	# URL parameter name that might contain an existing session.
+	# (This parameter name could in fact be extracted using
+	# 'web::param sid' whenever the session is initalized.)
+	web::filecontext state -path [file join [GlobalVar::cget stateDirectory] %s] -attachto sid -idgen "idGenerator nextval"
+
+	#Make a cookie for data.. it keeps track of the session id..
+	web::cookiecontext  LifeBeyond -expires  [clock add [clock seconds] 30 minutes]
+
+
+	# Make sure the session state directory exists! 
+	#DO NOT REMOVE THIS OR YOU'LL GET IN TROUBLE! LET IT RECREATE EVERY TIME
+	catch {file mkdir [GlobalVar::cget stateDirectory]}
+}
+proc saveAllFields {} {
+	# Save all form fields to state context.
+	foreach field [web::formvar -names] {
+		 state::cset $field [web::formvar $field]
+	}
+}
+#A little safety, if someone tries to remotely exploit session id's just invalidate if it's a different browser
+proc noHijack {} {
+	if {[state::cexists HTTP_USER_AGENT]} {
+		if {[web::decryptd [state::cget HTTP_USER_AGENT]] != [web::request HTTP_USER_AGENT]} {
+			state::invalidate
+			LifeBeyond::invalidate
+			#web::put "Invalidate!<br/><br/>"
+			RedirectAuth
+		} 
+	} else {
+		state::cset HTTP_USER_AGENT [web::encryptd [web::request HTTP_USER_AGENT]]
+		#web::put "Set again!<br/><br/>"
+		state::commit
+	}
+}
+proc InitSession {} {
+	#Start the session
+	StartSession
+	#Make the cookie
+	LifeBeyond::init LifeBeyondApocalypse
+	#Don't throw an error
+	if {[catch {
+		if {[LifeBeyond::cexists sessionId]} {
+			set sessionId [LifeBeyond::cget sessionId] 
+			state::init $sessionId	
+		} else { 
+			state::init 
+			LifeBeyond::cset sessionId [state::id]
+		}
+	} sessionError]} { 
+	#If the session doesn't exist anymore, invalidate the cookie(NOT THE SESSION!)
+	#and redirect to login..
+		LifeBeyond::invalidate
+		RedirectAuth
+	}
+		CorrectLang
+		LifeBeyond::commit
+}
+proc IsAuthenticated {} {
+	InitSession
+	noHijack
+	if {![state::cexists username]} {
+		return 0
+	} else {
+		#Make the LostPlayers selection global so we don't have to reselect it every freaking time:)
+		set username [state::cget username]
+		GlobalVar::carray set LostPlayer [DatabaseFetchArray "SELECT * from LostPlayers WHERE username='$username'"]
+		GoodAuthLang ;# give the good language
+		global errors
+		set errors ""
+		return 1
+	}
+}
+proc SaveSession {} { state::commit }
+proc RedirectAuth {} { 
+	Redirect ./[newUrl auth.ws3 expired]
+	#web::putx {<meta http-equiv="refresh" content="0;url=./{web::putx newUrl auth.ws3 expired] }">}
+}
+proc RedirectRestricted {} {	
+	Redirect ./[newUrl auth.ws3 RestrictedAccess]
+	#web::putx {<meta http-equiv="refresh" content="0;url=./{web::putx newUrl auth.ws3 RestrictedAccess] }">}
+}
+proc Redirect {page} {
+	#VERY IMPORTANT NOT TO SEND THE HEADER
+	web::response -sendheader 0
+	#The actual response
+	web::response -httpresponse "HTTP/1.1 301 Moved Permanently"
+	#the actual page
+	web::response -set Location  $page
+	#header is ok to send
+	web::response -sendheader 1
+	#put something so that the header gets sent
+	web::put ""	
+}
+#End session management
+#############
+#GetFormVar
+proc getFormVar {var} {
+	return [web::put [web::formvar $var]]
+}
+proc rnd {min max} {
+	expr {int(($max - $min + 1) * rand()) + $min}
+}
+proc unixtime { } { return [clock seconds] }
+proc givetime { time } { return [clock format $time -format {%Y-%m-%d %H:%M:%S}] }
+
+# Time difference function from http://wiki.tcl.tk/948
+# Usage: timeDiff: Seconds elapsed
+proc timeDiff {argSeconds} {
+	incr argSeconds 1
+	#set _llength 0; set _return "";
+	 set steps "
+		zero
+		year	[expr {86400 * 365}]
+		month	[expr {86400 * 30}]
+		week	[expr {86400 * 7}]
+		day		86400
+		hour	3600
+		minute	60
+		second	1
+		"
+		 
+	 set i 1
+	 set _templist {zero}
+	 while {$i < [llength $steps]} {
+		 set unit [lindex $steps $i]
+		 incr i
+		 set number [lindex $steps $i]
+		 incr i
+		 set argSeconds [::tcl::mathfunc::int $argSeconds]
+		 if  {$number > $argSeconds} {continue}
+		 set nunit [expr {$argSeconds / $number}]
+		 set argSeconds [::tcl::mathfunc::fmod $argSeconds $number]
+		 if {$nunit > 1} {set unit ${unit}s}
+		 lappend _templist "$nunit $unit"
+		 incr _llength
+	 }
+
+	for {set i $_llength} {$i > 0} {incr i -1} {
+		if {$i == $_llength} {
+			set _return "[lindex $_templist $i]"
+		} elseif {$i == [expr {$_llength -1}]}        {
+			set _return "[lindex $_templist $i] and $_return"
+		} else {
+			set _return "[lindex $_templist $i], $_return"
+		}
+	}
+
+	return $_return
+ }
+proc web:post {var} {
+	return [mysql::escape [web::formvar $var]]
+}
+proc web:get {var} {
+	return [mysql::escape [web::param $var]]
+}
+#Generates a string for human code
+###############################
+# Captcha image test generation
+###############################
+proc humanTest {} {
+	set type [rnd 1 3]
+	set nr1 [rnd 0 13]
+	set nr2 [rnd 0 13]
+	switch $type {
+		1 { set operation "+" }
+		2 { set operation "-" }
+		3 { set operation "*" }
+	}
+	#set expr "<span style=\"background:lightgrey;color:green;\">$nr1 <span>$operation</span> $nr2</span>"
+	set expr "$nr1$operation$nr2"	
+	set answer [expr "$nr1 $operation $nr2"]
+	state::cset humanTestAnswer $answer
+	state::commit
+	return $expr
+}
+
+web::command CaptchaCalc {
+	IsAuthenticated
+	Captcha calc
+}
+
+web::command Captcha {
+	IsAuthenticated
+	Captcha text
+}
+proc Captcha {type}  {
+	package require tclgd
+	#set font /usr/share/fonts/truetype/freefont/FreeSans.ttf
+	set font [file dirname [web::config script]]/gamesys/FreeSans.ttf
+	set width 100 ; set height 40
+	set img [GD create lol $width $height]
+	
+	set background [$img allocate_color 255 255 255] ; #background color
+
+	#Lines
+	set rl [rnd 0 200] ; set bl [rnd 0 200] ; set gl [rnd 0 200]
+	set lineColor [$img allocate_color  100 200 220]
+	for {set i 0} {$i<25} {incr i} {
+		#set rl [rnd 0 200] ; set bl [rnd 0 200] ; set gl [rnd 0 200]
+		#set lineColor [$img allocate_color $rl $bl $gl];# 100 200 220]
+
+		set x1 [rnd 0 $width] ; set x2 [rnd 0 $width] ; set y1 [rnd 0 $height]  ;set y2 [rnd 0 $height]
+		$img line  $x1 $y1 $x2 $y2 $lineColor 
+	}
+	#Text
+	set r [rnd 0 200] ; set b [rnd 0 200] ; set g [rnd 0 200]
+	#set textColor [$img allocate_color $r $b $g]
+	set textColor [$img allocate_color 0 0 0]
+	if {$type == "calc"} {	set text [humanTest] } else { 
+		set text [generateCode 5 3] 
+		state::cset humanTestAnswer $text
+		state::commit
+	 }
+	$img text $textColor $font 20 0 [expr {round($width*0.4 - ([string length $text]*20*0.60)/2)} ]   [expr {round($height/2 + 20/2)} ]   $text
+	
+	 # set HTTP header to "image/jpeg" instead of "text/html"
+    web::response -set Content-Type image/jpeg
+
+    # because we return a img, change to binary again
+    fconfigure [web::response] -translation binary
+
+    # output
+    web::put [$img jpeg_data 90]
+}
+
+#This helps you when making links for another file
+proc newUrl {script {command default} args} { 
+	web::cmdurlcfg -scriptname $script
+			#-urlformat [list scriptname querystring]
+	set url [web::cmdurl  $command $args]
+	web::cmdurlcfg -scriptname "" 
+	return $url
+}
+#This generates the full url for the current page
+#For the online version, strip the port.. 
+proc fullUrl {{command default} args} {
+	set url [web::cmdurl -urlformat [list scheme host port pathinfo script querystring]  $command $args]
+	return $url	
+}
+proc newUrl2 {script {command default} args} { 
+	web::cmdurlcfg -scriptname $script
+	web::config cmdurltimestamp 0
+	set url [web::cmdurl $command $args]
+	web::cmdurlcfg -scriptname "" 
+	web::config cmdurltimestamp 1
+	return $url
+}
+#Verifications
+
+proc VerifyAlive {health} {
+	if {$health == 0} { 
+		return 0
+	} else { return 1 }
+}
+proc VerifyEnergy {energy needed} {
+	global errors
+	#if {$energy < $needed} { return 0 } else { return 1 }
+	if {$energy < $needed} { 
+	append errors  [Lost:lang youHaveNoEnergy]
+	return 0
+	 } else { return 1 }
+}
+proc VerifyLevel {level} {
+	#TODO IN DISTANT FUTURE: The globalvar namespace is a little slow, better use it as a global variable?;;) 
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	if {![state::cexists username]} {
+		return 0
+	} else {
+		if {$LostPlayer(level) >= $level} {
+			return 1
+		} else { return 0 }
+	}
+}
+proc GetLevel {level} {
+	switch -- $level  {
+		1 { return [colorSpan Banned red] }		
+		2 { return [boldSpan "Player"] }	
+		3 { return [colorSpan Premium #CC5CDE]	}		
+		4 { return [colorSpan Bureaucrat #5CCEDE] }
+		5 { return [colorSpan Counciler #5E81DB] } 
+		6 { return [colorSpan Minister #EFA80E] } 
+		7 { return [colorSpan Dictator #5CDE60] } 
+	}	
+}
+#############
+#Mail and text
+#############
+proc generateCode {length {type 1}} {
+	if {$type == 1} {
+		set string "azertyuiopqsdfghjklmwxcvbnAZERTYUIOPQSDFGHJKLMWXCVBN0123456789"
+	} elseif {$type == 2} { set string AZERTYUIOPQSDFGHJKLMWXCVBN0123456789 
+	} elseif {$type == 3} { set string azertyuiopqsdfghjklmwxcvbn0123456789 } else {  set string 0123456789 }
+	set code ""
+	set stringlength [expr {[string length $string]-1}]
+	for {set i 0} {$i<$length} {incr i} {
+		append code [string index $string [rnd 0 $stringlength]]
+	}
+	return $code
+}
+proc send_mail {recipient subject body {Bcc ""}} {
+    package require smtp
+    package require mime
+    package require base64
+    set token [mime::initialize -canonical text/html  -string $body]
+    mime::setheader $token Subject $subject
+	mime::setheader $token From "\"Life Beyond Apocalypse\" <no-reply@lifebeyondapocalypse.net>" -mode append
+    mime::setheader $token To $recipient -mode append
+    if {$Bcc != ""} {  mime::setheader $token Bcc $Bcc -mode append }
+#	smtp::sendmessage $token -ports 587 -recipients $recipient -servers smtp.gmail.com -username lifebeyondapocalypse@gmail.com -password [::base64::decode "RHVtbmV6ZXVsMw=="]
+    smtp::sendmessage $token -ports 25 -recipients $recipient -servers localhost
+    mime::finalize $token
+}
+if {0} {
+ -header[list From "Life Beyond Apocalypse" no-reply@lifebeyondapocalypse.net]] \
+		-header[list To recipient@host.com]] \
+}
+
+#############
+#Database
+#############
+proc SelectThingsNeeded {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	#Select the local building info
+	GlobalVar::carray set Building [DatabaseFetchArray "select * from Buildings where (x='$LostPlayer(x)' and y='$LostPlayer(y)') and Buildings.Town='$LostPlayer(town)'"]
+	GlobalVar::cset players [DatabaseQuery "select LostPlayers.username,LostPlayers.health from Buildings,LostPlayers where LostPlayers.Status='Alive' and (Buildings.x=LostPlayers.x and Buildings.y=LostPlayers.y) and (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and (Buildings.Town='$LostPlayer(town)' and Buildings.Town=LostPlayers.town) and LostPlayers.inbuilding='$LostPlayer(inbuilding)' AND NOT LostPlayers.username='$LostPlayer(username)')"]
+	GlobalVar::cset skills [DatabaseQuery "select Skill from PlayerSkills where username='$LostPlayer(username)'"]
+}
+#############
+#Map Generation
+#############
+proc MapMovement {{movex ""} {movey ""}} {
+	global errors
+	SelectThingsNeeded
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	array set Building [GlobalVar::carray get Building]
+	set skills [GlobalVar::cget skills]
+		
+	#Reselect everything, why? because 
+	set username [state::cget username]
+	if {[VerifyEnergy $LostPlayer(energy) 1]} {
+		if {$movex != "" && $movey != "" && ($movey != $LostPlayer(y) || $movex != $LostPlayer(x))} {
+			if {$LostPlayer(inbuilding) == 1 && $LostPlayer(status) != "Zombie"} { 
+				if {![string match -nocase "*${Building(type)}*" "Park Junkyard Street Cemetery"] &&  [string match -nocase "*Stealth*" $skills]} { 
+					incr LostPlayer(energy) -2 
+				} else {  
+					incr LostPlayer(energy) -1 
+					set LostPlayer(inbuilding) 0
+				}
+			}
+			if {$LostPlayer(inbuilding) == 1 && $LostPlayer(class) == "Zombie"} { set LostPlayer(inbuilding) 0 }
+			
+			if {[string match -nocase "*Undead senses*" $skills] && $LostPlayer(status) == "Zombie"} {
+				incr LostPlayer(energy) 0
+			} elseif {$LostPlayer(status) == "Zombie" && ![string match -nocase "*Undead senses*" $skills]} { 
+				incr LostPlayer(energy) -1	
+			}
+
+			#Control if player is near edge, used later when you can just chose where to go.. if ever
+			#if {[Edge $LostPlayer(x) $LostPlayer(y) $LostPlayer(town)] == 0} { return }
+			set toUseEnergy [expr {int(sqrt(($LostPlayer(x)-$movex)**2+($LostPlayer(y)-$movey)**2))}]
+			if {$toUseEnergy>3} { 	append errors [Lost:lang travelLongDistanceWithoutClicking] }
+			if {[string length $errors] ==  0} {
+				#If the user tries to cheat and move further.. calculate more energy!
+				incr LostPlayer(energy) -$toUseEnergy
+				set LostPlayer(x) $movex; set LostPlayer(y) $movey ; set LostPlayer(lastAction) [unixtime]
+				if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+				DatabaseExec "UPDATE LostPlayers SET x='$LostPlayer(x)', y='$LostPlayer(y)', energy='$LostPlayer(energy)', inbuilding='$LostPlayer(inbuilding)', lastAction='$LostPlayer(lastAction)',health='$LostPlayer(health)' WHERE username='$username'"
+				#Important to uptade the array so other functions work correctly
+				GlobalVar::carray set LostPlayer [array get LostPlayer]
+			} 
+		}
+		#Dont ommit this!
+		DisplayMap
+	} else { 
+		page "Exhausted" "" { addLabel info [Lost:lang youAreExhausted]  }
+	}
+}
+proc DisplayMap {{extraDisplay ""}} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set skills [GlobalVar::cget skills]
+	global errors
+	SelectThingsNeeded
+	
+	if {![VerifyAlive $LostPlayer(health)]} { append errors [Lost:lang youAreDead] } 
+	set buildings [DatabaseQuery "select type,name,y,x,status from Buildings where (x between '$LostPlayer(x)'-1 and '$LostPlayer(x)'+1) and (y between '$LostPlayer(y)'-1 and '$LostPlayer(y)'+1) and Buildings.Town='$LostPlayer(town)'" ]
+	if {$LostPlayer(inbuilding) == 0} {
+		#,LostPlayers.health,LostPlayers.maxhealth for Diagnosis skill
+		set players [DatabaseQuery "select LostPlayers.x,LostPlayers.y,LostPlayers.username,LostPlayers.status from Buildings,LostPlayers
+			where  Buildings.x=LostPlayers.x and Buildings.y=LostPlayers.y and LostPlayers.x between '$LostPlayer(x)'-1 and '$LostPlayer(x)'+1
+			and LostPlayers.y between '$LostPlayer(y)'-1 and '$LostPlayer(y)'+1 and Buildings.Town='$LostPlayer(town)' and Buildings.Town=LostPlayers.town
+			and LostPlayers.inbuilding='$LostPlayer(inbuilding)' AND NOT LostPlayers.username='$LostPlayer(username)'"]
+	} else {
+		set players [DatabaseQuery "select LostPlayers.x,LostPlayers.y,LostPlayers.username,LostPlayers.status from Buildings,LostPlayers where
+		 Buildings.x=LostPlayers.x and Buildings.y=LostPlayers.y and LostPlayers.x='$LostPlayer(x)' and LostPlayers.y='$LostPlayer(y)'
+		 and Buildings.Town='$LostPlayer(town)' and Buildings.Town=LostPlayers.town and LostPlayers.inbuilding='$LostPlayer(inbuilding)'
+		  AND NOT LostPlayers.username='$LostPlayer(username)'"]
+	}
+#	if  {[string match -nocase "*diagnosis*" $skills]} { set seeHp 1  } else { set seeHp 0 }
+	
+	#Calculate if we need to do a 2x2 or a 3x3 table with how many things are selected
+	set totalBuildings [expr {[llength $buildings]/5}]
+	
+	web::put $totalBuildings
+	page [Lost:lang mapTitle] {
+		web::putx {<table id="map"><tr><td class="head" colspan="3">{web::put $LostPlayer(town)}</td></tr><tr>}
+		foreach {type name y x status} $buildings {
+			incr nr 
+			set playerList "" 
+			set j 0; set i 0
+			foreach {usrx usry userloc userStatus} $players {
+				if {$usry == $y && $usrx == $x & $userStatus == "Alive"} {
+					incr i
+					if {$i >= 5} { append playerList "<br/><span class=\"player\">others..</span>" ; break  }
+			#		if {$seeHp==1} { set userinfo "$userloc (${health}hp)" } else { set userinfo $userloc }
+					append playerList "<a href=\"./[newUrl profile.ws3 default profile $userloc]\" rel=\"./profile.ws3?ApocalYpsE=ajaxVersion&profile=$userloc\" title=\"<span class='bold'>$userloc's</span> profile\" class=\"player\">$userloc</a>"
+				}
+				if {$userStatus == "Zombie"} { incr j }
+			}
+			if {$j > 0 && $usry == $y && $usrx == $x} { append playerList "<span class=\"player\">$j zombies</span>" }
+			web::put "<td  [MapBuildingImage $type]><div class=\"$status\"><a href=\"[newUrl map.ws3 move movex $x movey $y]\" title=\"$name  - $type at Location: $x,$y \">$type <br/></a></div>$playerList</td>"
+			if {$totalBuildings != 4} {
+				if {([expr {$nr%3}] == 0) && ([expr {$nr/3}] != 3)} {	web::put "</tr><tr>" }
+			} else {
+				if {([expr {$nr%2}] == 0) && ([expr {$nr/2}] != 3)} {	web::put "</tr><tr>" }
+			}
+		}
+		web::put "</tr></table>"
+		#ShowStats used to be here, maybe commercials?
+	} { 
+		if {$LostPlayer(energy) <= [expr $LostPlayer(maxenergy)*0.1]} { addLabel warning [Lost:lang energyLeft $LostPlayer(energy)]  }
+		if {$extraDisplay != ""} { uplevel $extraDisplay }
+		if {$LostPlayer(infected) == 1} { addLabel error [Lost:lang youAreInfected] }
+		if {[string length $errors] !=  0} { addLabel error $errors }
+		#Some procs needed
+		BuildingInfo
+		DisplayLogMessages
+		if {[VerifyAlive $LostPlayer(health)]} {
+			PossibleActions
+			ListInventory
+		} else {
+			#TODO
+			web::putx {	
+				<form method="post" action="{web::put [newUrl map.ws3 StandUp]}" class="map extendedItem">
+				{web::put [htmlInput "standUp" submit [Lost:lang standUp]]; web::put "<label class=\"map\">[Lost:lang cost50Energy]</label>" }
+				</form>
+			}
+		}
+	}	
+}
+proc PossibleActions {} {
+	#get the variables
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	array set Building [GlobalVar::carray get Building]
+	set skills [GlobalVar::cget skills]
+
+	#Enter & Exit building
+	web::putx {	<p>Some possible actions:</p>}
+	if {![string match -nocase "*${Building(type)}*" "Park Junkyard Street cemetery"]} {
+		web::putx { <form method="post" action="{web::put [newUrl map.ws3 enterBuilding]}" class="map"> }
+		if {$LostPlayer(inbuilding) == 0} { web::put [htmlInput "enter" submit [Lost:lang enterBuilding] ] } else { web::put [htmlInput "enter" submit [Lost:lang exitBuilding]]  } 
+		web::put "</form>"
+	}
+	#Search in building Everything is done in search.ws3
+	if {$LostPlayer(inbuilding)==1 || [string match -nocase "*${Building(type)}*" "junkyard park"]} {
+		web::putx {	
+			<form method="post" action="{web::put [newUrl search.ws3 searchItems]}" class="map">
+			{web::put [htmlInput "search" submit [Lost:lang searchItems]]}
+			</form>
+		}
+	}
+	#Open & Close doors
+	if {$Building(barricades) == 0} {
+		web::putx {	<form method="post" action="{web::put [newUrl map.ws3 SwitchDoor]}" class="map">
+			{web::put [htmlInput "closedoor" submit [Lost:lang closeDoor ]]}</form> }
+	} elseif {$Building(barricades) == 1} { 
+		web::putx {	<form method="post" action="{web::put [newUrl map.ws3 SwitchDoor]}" class="map">
+			{web::put [htmlInput "opendoor" submit  [Lost:lang openDoor]]}</form> }
+
+	}
+	#Barricade Building
+	if {[string match -nocase "*Construction*" $skills] && $Building(damage) > 20 && $Building(barricades) < 30 && $LostPlayer(inbuilding) == 1 && ![string match -nocase "*${Building(type)}*" "Park Junkyard Street Cemetery"]} {
+		web::putx {	
+			<form method="post" action="{web::put [newUrl map.ws3 Barricade]}" class="map">
+			{web::put [htmlInput "barricade" submit [Lost:lang barricadeBuilding]]}
+			</form>
+		}
+	}
+	#Repair Building
+	if {[string match -nocase "*Construction*" $skills] && $Building(damage) < 70 && ![string match -nocase "*${Building(type)}*" "Park Junkyard Street Cemetery"]}  {
+		web::putx {	
+			<form method="post" action="{web::put [newUrl map.ws3 RepairBuilding]}" class="map">
+			{web::put [htmlInput "repair" submit [Lost:lang repairBuilding]]}
+			</form>
+		}
+	}
+	
+	#Talk to people (in- or outside buildings)
+	web::putx {
+		<form method="post" action="{web::put [newUrl communication.ws3 SetLocalMsg]}" class="map extendedItem">
+		<input type="text" name="message" style="width:200px" />
+		{web::put [htmlInput "localMsg" submit [Lost:lang saySomething]]}
+		</form>
+	}
+	#Drag corpses outside
+	set deadInside [GlobalVar::cget deadInside]
+	if {$deadInside > 0 && $LostPlayer(inbuilding) == 1} {
+	web::putx {	<form method="post" action="{web::put [newUrl map.ws3 DragCorpses]}" class="map">
+		{web::put [htmlInput "Drag" submit [Lost:lang dragCorpseOut]]}</form>}	
+	}
+	#View all attack possibilities
+	ViewAttack
+	#Make stuff
+
+}
+#############
+#Buildings
+#############
+proc Barricades {level} {
+	if {$level == 0} { return [Lost:lang doorIsOpen]  }
+	if {$level == 1} { return [Lost:lang doorIsClosed]  }
+	if {$level >=2 && $level <=5} { return [Lost:lang simpleBarricades] }
+	if {$level >=6 && $level <=12} { return [Lost:lang advancedBarricades]  }
+	#Entering building requires 2 Energy
+	if {$level >=13 && $level <=21} { return [Lost:lang extremeBarricades]  }
+	#Not possible to enter, Exitiing building requires 1 xp
+	if {$level >=22 && $level <=30} { return [Lost:lang inaccesibleBarricades]  }
+}
+proc BuildingDamage {level} {
+	if {$level >= 60} { return [Lost:lang buildingNotDamaged] }
+	if {$level >= 20 && $level < 60} { return [Lost:lang buildingIsDamaged]  }
+	if {$level < 20} { return [Lost:lang buildingIsRuined]  }
+}
+proc InBuilding {inside} {
+	if {$inside ==0} { return [Lost:lang outside] } else { return [Lost:lang inside]  }
+}
+proc BuildingInfo {} {
+	set username [state::cget username]
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set theDead [DatabaseQuery "select LostPlayers.Status from Buildings,LostPlayers where LostPlayers.Status!='Alive' and (Buildings.x=LostPlayers.x and Buildings.y=LostPlayers.y) and (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and (Buildings.Town='$LostPlayer(town)' and Buildings.Town=LostPlayers.town) and LostPlayers.inbuilding='$LostPlayer(inbuilding)' AND NOT LostPlayers.username='$LostPlayer(username)')"]
+	set players [GlobalVar::cget players]
+	array set Building [GlobalVar::carray get Building]
+	set skills [GlobalVar::cget skills]
+
+	if {$players != ""} { 
+		set upperbound [expr {([llength $players] -1)}]
+		if {$upperbound==0} { set peopletext [Lost:lang sittingLonely] } else { set peopletext [Lost:lang somePeopleHere] }
+		if  {[string match -nocase "*diagnosis*" $skills]} { set seeHp 1  } else { set seeHp 0 }
+
+		for {set i 0} {$i <= $upperbound} {incr i 2} {
+			set anotherplayer [lindex $players $i]
+			if {$i == $upperbound && $i != 0} { append playerList "and " } elseif {$i != $upperbound && $i != 0} { append playerList ", " } 
+			if {$seeHp==1} { set userinfo "$anotherplayer ([lindex $players $i+1]hp)" } else { set userinfo $anotherplayer }
+			append playerList "<a href=\"./[newUrl profile.ws3 default profile $anotherplayer]\" class=\"player\" rel=\"./profile.ws3?ApocalYpsE=ajaxVersion&profile=$anotherplayer\" title=\"<span class='bold'>$anotherplayer's</span> profile\">$userinfo</a>"
+		}
+		set PeopleOutside "$peopletext $playerList" 
+	} else { set PeopleOutside [Lost:lang noOneHere] }
+	
+	set dead 0; set zombies 0;
+	foreach status $theDead {
+		if {$status == "Zombie"} {
+			incr zombies
+		} else { incr dead}
+	}
+	if {$zombies > 0} { append PeopleOutside [Lost:lang ZombiesHere]  ; GlobalVar::cappend players " Zombie" }
+	if {$dead > 0} { 
+		append PeopleOutside [Lost:lang deadHere] 
+		GlobalVar::cset deadInside 1
+	}
+
+	if {![string match -nocase "*${Building(type)}*" "Park Junkyard Street Cemetery"]} {
+		#hasTransciever INT DEFAULT 0, generatorTime
+		set Generator ""
+		if {$Building(hasGenerator) > 5} { 
+			append Generator [Lost:lang portableGeneratorHere] 
+		} elseif {$Building(hasGenerator) < 5 && $Building(hasGenerator) > 0} { append Generator [Lost:lang damagedPortableGeneratorHere]  }  
+		
+		if {$Building(generatorTime) > 0 && $Building(hasGenerator) > 0} {
+			append Generator [Lost:lang generatorPower] 
+			set PoweredBuilding [Lost:lang generatorPowerInside] 
+			if {$Building(generatorTime) < 10} { append Generator [Lost:lang generatorLowFuel]  }
+			if {$Building(hasTransciever) > 0} { append Generator [Lost:lang transcieverPower] }
+		} else { set PoweredBuilding "" }
+		
+		addLabel info "[InBuilding $LostPlayer(inbuilding)]  <span class=\"bold\">$Building(type)</span>.
+		[BuildingDamage $Building(damage)]  [Barricades $Building(barricades)]. <br/> $PeopleOutside <br/> [ expr {$LostPlayer(inbuilding)==1? $Generator : $PoweredBuilding }]"
+	} else	{ addLabel info "You are in the $Building(type). <br/> $PeopleOutside  " } 
+}
+proc MapBuildingImage {buildingType} {
+	regsub {\s} $buildingType "" buildingImage
+	return "style=\"background: url(./images/buildings/${buildingImage}.gif)  center bottom no-repeat; width: 130px; height:130px;\""
+}
+proc ItemImage {item} {
+	regsub {\s} $item "" itemName
+	return "<p style=\"margin: 0 auto;\"><img style=\"width: auto; height:auto;\" src=\"./images/items/${itemName}.jpg\"/></p>"
+}
+#############
+#Combat (attacking)
+#############
+proc ViewAttack {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set players [GlobalVar::cget players]
+	array set Building [GlobalVar::carray get Building]
+	set skills [GlobalVar::cget skills]
+	set adversary [web:post adversary]
+	set formWeapon [web:post weapon]
+
+	if {$players == "" && ![string match -nocase "*${Building(type)}*" "Park Junkyard Street Cemetery"]  && $Building(barricades) <= 1 && ![string match -nocase "*Ransack*" $skills]} { return  "" }
+	#Hope there are players here
+	if {($players != "" || ![string match -nocase "*${Building(type)}*" "street junkyard park cemetery"]) 
+			&&	($Building(damage) > 1)} {
+		if {$LostPlayer(status) == "Zombie"} {
+			#get zombie attacks
+			array set zombieAttacks [DatabaseFetchArray "select * from ZombieAttacks where username='$LostPlayer(username)'"]
+			append weapons "Bite $zombieAttacks(BiteDmg) $zombieAttacks(BiteAcc) Hands $zombieAttacks(ClawDmg) $zombieAttacks(ClawAcc)"
+		} else { 
+			#get human attacks(fist)
+			set weapons "Punch 1 25 "
+			append weapons [DatabaseQuery "SELECT Weapons.Name,Weapons.Damage,Weapons.Accuracy from Items,Weapons where Items.username='$LostPlayer(username)' and Items.item=Weapons.name"]
+			array set playerAccuracy [DatabaseFetchArray "select * from PlayersAccuracy where username='$LostPlayer(username)'"]
+		}
+		#Print the info
+		web::putx {<p><form method="post" action="{web::put [newUrl combat.ws3 attack]}" class="map info" style="padding-bottom:7px;">
+		{web::put [htmlInput "attack" submit [Lost:lang attack]]}
+		<select name="adversary">}
+		
+	
+		#Only people (maybe later zombie-only) may attack buildings that have NO barricades
+		if {$Building(barricades) > 1 && ![string match -nocase "*${Building(type)}*" "Park Junkyard Street Cemetery"]} { 
+			web::put "<option value=\"barricades\">[Lost:lang theBarricades]</option>" 
+			#This resquires Ransack Skill to be able to attack buildings
+		} elseif {$Building(barricades) <= 1 && [string match -nocase "*Ransack*" $skills] } { web::put "<option value=\"building\">[Lost:lang theBuilding]</option>" }
+		
+		foreach {player health} $players {
+			if {$player == $adversary} { 
+				set playerselected {selected="selected"}
+			} else { set playerselected "" }
+			web::put "<option value=\"$player\" $playerselected>$player</option>"
+		}
+		web::putx {</select><label class="map" for="weapon">{web::put [Lost:lang with]} </label><select id="weapon" name="weapon"> }
+		foreach {weapon damage accuracy} $weapons {
+			if {$LostPlayer(status) != "Zombie"} {
+				#Add the accuracy to each weapon:)
+				switch $weapon {
+					Knife { incr accuracy  [expr {$playerAccuracy(Blade) + $playerAccuracy(HandToHand)}] }
+					Axe { incr accuracy  [expr {$playerAccuracy(Blade)+ $playerAccuracy(Axe) + $playerAccuracy(HandToHand)}] }
+					Kantana {  incr accuracy  [expr {$playerAccuracy(Blade) + $playerAccuracy(HandToHand)}] } 
+					Pistol { incr accuracy   $playerAccuracy(Pistol) }
+					Shotgun { incr accuracy  $playerAccuracy(Shotgun) }
+					default { incr accuracy $playerAccuracy(HandToHand) }
+				}
+			} 
+			if {$weapon == $formWeapon} { 
+				set weaponSelected {selected="selected"}
+			} else { set weaponSelected "" }
+			web::put "<option value=\"$weapon\" $weaponSelected>[Lost:lang $weapon] ($damage dmg, ${accuracy}%)</option>"
+		}
+		#How many times
+		web::putx {</select><select id="times" name="times">}
+		foreach attTimes {1 2 6 7 13} {
+			web::put "<option value=\"$attTimes\">$attTimes</option>"
+		}
+		
+		web::putx {</select><label for="times" class="map">{web::put [Lost:lang times]}</label></form></p>}
+	}
+}
+
+#############
+#Inventory stuff
+#############
+
+proc ListInventory {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set items [DatabaseQuery "SELECT Item,Subitem from Items where username='$LostPlayer(username)' ORDER BY Item ASC"]
+	set players [GlobalVar::cget players]
+	
+	web::put {<p>Inventory items <a href="#" id="showItems">[-]</a></p><div id="items">}
+	if {$items == ""} { addLabel info [Lost:lang noItems]} else {
+		if {$LostPlayer(status) != "Zombie"} {
+			foreach {item subitem} $items {
+				set info ""
+				set itemName $item 
+				
+				switch $item {
+					"First Aid Kit" {  set info "extendedItem" }
+					"Pistol" { set itemName "$item ($subitem)" }
+					"Shotgun" { set itemName "$item ($subitem)" }
+					"Mobile Phone" {
+						set unreadMessages [DatabaseQuery "SELECT count(msgid) FROM Messages WHERE toUser='$LostPlayer(username)' and readMsg=0"]
+						if {$unreadMessages > 0} { set itemName "$item ($unreadMessages)" }
+					}
+				}
+				
+				web::putx {<form method="post" action="{web::put [newUrl items.ws3 useItem]}" class="map {web::put $info }"> }
+				web::put [htmlInput "item" hidden "$item"]
+				web::put [htmlInput "submit" submit [Lost:lang $itemName] "title='[Lost:lang $itemName]'"] ; #Used for translation
+	#web::put [htmlInput "submit" image "$itemName" "src='./images/items/FirstAidKit_lbl.jpg' style='width:auto;height:auto;' title='$itemName'"] ; #Used for translation
+
+				switch $item {
+					"First Aid Kit" { 
+						web::put {<label class="map" for="weapon">on </label><select id="healWho" name="healWho"> }
+						web::put "<option value=\"$LostPlayer(username)\">[Lost:lang self] </option>"
+						foreach {player health} $players {
+							web::put "<option value=\"$player\">$player</option>"
+						}
+						web::put </select>
+					}
+				}
+					web::put </form>
+			}
+		} else { web::put "As a zombie you can't use the items you have!" }
+		
+		web::putx {</div><p><label for="drop">[Lost:lang dropItem]:</label><form method="post" action="{web::put [newUrl items.ws3 dropItem]}" class="map"> 
+		<select id="drop" name="item"><option value="">---</option>}
+		
+		foreach {item  subitem} $items {
+			web::put "<option value=\"$item\">$item</option>"
+		}
+		web::put "</select>[htmlInput "submit" submit [Lost:lang dropItemButton]]</form></p>"
+	}
+}
+#############
+#Display Messages & Logs
+#############
+proc DisplayLogMessages {} {
+#upvar LostPlayer LostPlayer
+array set LostPlayer [GlobalVar::carray get LostPlayer]
+if 0 {
+#Journal
+DatabaseExec "CREATE TABLE Journal(username VARCHAR(250), journalText TEXT, time INT)" 
+#Messages
+DatabaseExec "CREATE TABLE Messages(fromUser VARCHAR(250), toUser VARCHAR(250), msg VARCHAR(250), time INT, readMsg INT)"
+#LocalMsg
+DatabaseExec "CREATE TABLE LocalMsg(fromUser VARCHAR(250), inbuilding INT, town VARCHAR(50), x INT, y INT, msg VARCHAR(250), time INT)"
+#Actions
+DatabaseExec "CREATE TABLE Actions(username VARCHAR(250),  action TEXT, time INT)"
+}
+	#Display all messages from the last action till now..
+	set localMessages [DatabaseQuery "SELECT msgTime,fromUser,msg FROM LocalMsg WHERE inbuilding='$LostPlayer(inbuilding)' and town='$LostPlayer(town)' and x='$LostPlayer(x)' and y='$LostPlayer(y)' and msgTime>='$LostPlayer(lastAction)'-180 ORDER BY (msgTime+0) DESC"]  
+	set messages [DatabaseQuery "SELECT msgTime,fromUser,msg FROM Messages WHERE fromUser='SYSTEM' and toUser='$LostPlayer(username)' and msgTime>='$LostPlayer(lastAction)'-180 ORDER BY (msgTime+0) DESC"]  
+	if {$localMessages != 0} { 
+		set timenow [unixtime]
+		web::put "<p>"
+		foreach {time fromUser msg} $localMessages {
+			set user "<a href=\"./[newUrl profile.ws3 default profile $fromUser]\" rel=\"./profile.ws3?ApocalYpsE=ajaxVersion&profile=$fromUser\" title=\"<span class='bold'>$fromUser's</span> profile\" class=\"player\">$fromUser</a>"
+			web::put "$user [boldSpan $msg]   <span style=\"font-size:12px;color:lightgray;\">([timeDiff [expr {$timenow -$time}]] ago)</span><br/>"
+		}
+		web::put "</p>"
+	}
+	#<a href=\"./[newUrl profile.ws3 default profile $userloc]\" 
+	#rel=\"./profile.ws3?ApocalYpsE=ajaxVersion&profile=$userloc\" title=\"<span class='bold'>$userloc's</span> profile\" class=\"player\">$userloc</a>"
+
+	if {$messages != 0} { 
+		set timenow [unixtime]
+		web::put "<p>"
+		foreach {time fromUser msg} $messages {
+			set user "<a href=\"./[newUrl profile.ws3 default profile $fromUser]\" rel=\"./profile.ws3?ApocalYpsE=ajaxVersion&profile=$fromUser\" title=\"<span class='bold'>$fromUser's</span> profile\" class=\"player\">$fromUser</a>"
+			web::put "$user [boldSpan $msg] <span style=\"font-size:12px;color:lightgray;\">([timeDiff [expr {$timenow -$time}]] ago)</span><br/>"
+		}
+		web::put "</p>"
+	}
+}
+
+#TODO add this..:P
+
+#############
+#Initializer.. Code that is run on every page request
+#############
+
+web::initializer {
+	if {$database == "sqlite3"} {
+		sqlite3 lba [web::request DOCUMENT_ROOT]/../LifeBeyondApocalypse.sqlite
+	} else {
+		if {[catch {set lba [mysql::connect -host localhost -user lifebeyond -password ApocalYps3 -db lifebeyondapocalypse] 
+		 	} databaseError]} { web::put "Could not connect to mysql.. oops! $databaseError" ; exit  }
+	}
+	NewTurn
+}
+
+#Code that's run when every page has ended
+web::finalizer {
+	if {$database == "sqlite3"} {
+		lba close
+	} else { mysql::close $lba }
+
+}
+
+
+#/OBF

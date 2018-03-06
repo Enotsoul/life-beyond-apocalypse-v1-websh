@@ -1,0 +1,344 @@
+try {
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#Load database
+package require sqlite3
+#2 databases? 1 for read and another for writing
+sqlite3 WikiDB  [file dirname [web::config script]]/gamesys/WikiDatabase.sqlite
+WikiDB timeout 700
+#############
+#Functions
+#############
+
+#Used to display the page, links can be edit here manual 
+#Later add something to automatically look
+proc displayWikiPage {{extraText ""}} {
+	upvar PageInfo PageInfo
+	set isLogged [IsAuthenticated]
+	set pageName  [join [split [web::param page] "_"][gigel]]
+	page "Wiki - $pageName" "" "" {
+		web::put {<div id="wikiMenu">}
+		web::putx {
+			<div class="submenu">
+			<p>Wiki Stuff</p> 
+			 <ul><li><a href="wiki.ws3">First Page</a></li>
+			 <li><a href="{web::put [web::cmdurl default page 2]}">News</a></li>
+			 <li><a href="#">Special Pages</a></li>
+			 <li><a href="{web::put [web::cmdurl randomWikiPage]}">Random Page</a></li>
+			 <li><a href="{web::put [web::cmdurl listAllWikiPages]}">List all pages</a></li>
+			 </ul></div>
+			<div class="submenu">
+			<p>Page Contents</p> 
+			 <ul>
+		 }
+		 if {$isLogged == 1} {
+		 	 web::putx {<li><a href="{web::put [web::cmdurl createNewWiki]}">Create New  Page</a></li>
+				<li><a href="{web::put [web::cmdurl editWiki pageName  $pageName]}"> Edit Page</a></li>}
+		 }
+		web::putx {
+			 <li><a href="{web::put [web::cmdurl pageHistory page $pageName]}">Page History</a></li>
+			 <li><a href="#">References</a></li>
+			 </ul></div>}
+		web::putx {
+			
+		}
+		web::put {</div><div id="wikiContent">}
+		uplevel $extraText
+		web::put {</div>}
+	}	
+}
+proc SelectPageInfo {pageName {pageReview ""}} {
+	#Set this to be sure we don't get an error if array is empty
+	array set PageInfo [list PageId "" PageName "" EditRights 0]
+	#If there is no other PageModification set it from 0 up
+	array set PageData [list PageModification 0]
+	#search by page number or name
+	if {[string is digit $pageName]} {
+		WikiDB eval {SELECT * FROM PageInfo WHERE PageId=$pageName} PageInfo {}
+		set okName [join [split $PageInfo(PageName) "_"]]
+		if {$pageReview != ""} {
+			WikiDB eval {SELECT * FROM PageData WHERE PageName=$okName AND PageModification=$pageReview} PageData {}
+		 } else {
+			 WikiDB eval {SELECT * FROM PageData WHERE PageName=$okName} PageData {}
+		 }
+	} else {
+		set okName [join [split $pageName "_"]]
+		WikiDB eval {SELECT * FROM PageInfo WHERE PageName=$okName} PageInfo {}
+		if {$pageReview != ""} {
+			WikiDB eval {SELECT * FROM PageData WHERE PageName=$okName AND PageModification=$pageReview} PageData {}
+		 } else {
+			 WikiDB eval {SELECT * FROM PageData WHERE PageName=$okName} PageData {}
+		 }
+	}
+	return [concat [array get PageInfo] [array get PageData]]
+}
+#This procedure shows the page creation/edition form
+proc wikiForm {new} {
+	# 0 or empty when used for editing
+	# 1 = when creating a new page 
+	# 2 = Load page from database
+	global errors; set errors ""
+	set text [web::htmlify -numeric [web::formvar text]]
+	if {$new < 1} {
+		set text [web::htmlify -numeric [web::formvar text]]
+		set pageName [web::formvar pageName]
+	} elseif {$new == 2} { 
+		#load page from database
+		set pageName [web::param pageName]
+		
+		#proc with database selection here
+		array set PageInfo [SelectPageInfo $pageName]
+		if {$PageInfo(PageName) == ""} { addLabel error "The page you have requested doesn't exist!" } else {
+			set text $PageInfo(PageContent)
+		}
+		#TODO make it more complicated than this:)
+		#if {$PageInfo(EditRights) > 1 && $PageInfo(Creator) != $LostPlayer(username)} { append errors "You aren't allowed to edit this page!" }
+	}
+	
+	if {[string length $errors] ==  0} {
+		web::putx {
+		<a href="{web::put [web::cmdurl formatting]}">Formatting rules</a>
+		<form method="post" action="{web::put [web::cmdurl SaveOrEditWiki]}" class="map">
+		<div><fieldset>
+		<legend>Edit Wiki Page</legend>
+		}	
+		#Ask for the pageName
+		if {$new == 1} {
+			web::putx {<label for="pageName" class="map">Page Name</label> <input type="text" id="pageName" name="pageName" /> <br> }
+		} else { web::putx {<input type="hidden" name="pageName" value="{web::put $pageName}" />} }
+		#Put the rest of the form
+		web::putx {
+		<label for="textarea" class="map">Edit the Wiky</label><br/><textarea id="textarea" name="text" style="width:700px; height:500px;">{web::put $text}</textarea><br/>
+		<input type="submit" name="SaveWiki" value="Submit"/> <input type="submit" name="Preview" value="Preview"/>
+		</fieldset></div>
+		</form>}	
+	}
+}
+proc SaveOrEditWiki {} {
+	global errors 
+	set text [string trim [web::htmlify -numeric [web::formvar text]]]
+	set timeStart [clock milliseconds]
+	set pageName [web::formvar pageName]
+	
+	displayWikiPage {
+		array set LostPlayer [GlobalVar::carray get LostPlayer]
+		#Show the previewpage
+		if {[web::formvar Preview] != ""} {
+			web::put "The page you are editing should look like this:<br/><div style=\"margin-left:3px;border:1px solid black;padding:5px;\"> [processWiki $text]"
+			set timeStop [clock milliseconds]
+			web::put "</div><p>TIme needed for page [expr {double($timeStop - $timeStart)/1000}] secs</p>"
+			wikiForm 0 
+		 }
+		#Save the page Or create it
+		if {[web::formvar SaveWiki] != ""} { 
+			#WikiDB eval {CREATE TABLE PageInfo(PageId INTEGER PRIMARY KEY autoincrement, PageName TEXT, PageType INT DEFAULT 0, Creator TEXT, CreationTime INT DEFAULT 0, EditRights INT DEFAULT 1, EditorsList TEXT)}
+			##PageData
+			#WikiDB eval {CREATE TABLE PageData(PageModification INTEGER, PageName TEXT, PageContent BLOB, LastModification INT DEFAULT 0, LastAuthor TEXT, LastIP TEXT, PRIMARY KEY (PageModification, LastAuthor))}
+			##Usernames
+			#WikiDB eval {CREATE TABLE Usernames(username TEXT PRIMARY KEY, PagesCreated INT DEFAULT 0, PagesEdited INT DEFAULT 0)}
+			#Control if everything is ok
+			if {([string length $text] < 50)  || [string length $pageName] < 4} { append errors "Fill in all fields and be sure to type at least 50 characters! The name must be at least 5 characters." }
+			if {![regexp {^[a-zA-Z0-9:\-\. ]{4,}$} $pageName]} { append errors "Please use only these (.,:,- and spaces) and alphanumeric characters for the page title." }
+			if {$LostPlayer(level)<3} { append errors "You must be at least a Premium user to be able to add or edit wiki pages!" }
+
+			#Get data & control variables 
+			#eventually add a new error checking for the whole so we don't need to read the database			
+			array set PageInfo [SelectPageInfo $pageName]
+			set timeNow [unixtime]
+			set ip [web::request REMOTE_ADDR]
+			incr PageInfo(PageModification) 1
+			
+			if {$PageInfo(PageId) != ""} {
+				#TODO make it more complicated than this:)
+				if {$PageInfo(EditRights) > 1 && $PageInfo(Creator) != $LostPlayer(username)} { append errors "You aren't allowed to edit this page!" }
+				  #todo... modify page!:p
+				 if {[string length $errors] ==  0} {
+					WikiDB  eval {INSERT INTO PageData (PageModification,PageName,PageContent,LastModification,LastAuthor,LastIP) 
+					VALUES($PageInfo(PageModification),$pageName,$text,$timeNow,$LostPlayer(username),$ip)}
+					addLabel success "You've successfully modified the Wiki Page <span class=\"bold\">$pageName</span>."
+					#Show the form again if anything goes wrong
+				 } else { addLabel error $errors ; wikiForm 2}
+			} else {
+				#Create New Page
+				if {[string length $errors] ==  0} {
+					WikiDB  eval {INSERT INTO PageInfo (PageName,Creator,CreationTime,EditRights,EditorsList) VALUES($pageName,$LostPlayer(username),$timeNow,1,'None')}
+					WikiDB  eval {INSERT INTO PageData (PageModification,PageName,PageContent,LastModification,LastAuthor,LastIP) 
+					VALUES($PageInfo(PageModification),$pageName,$text,$timeNow,$LostPlayer(username),$ip)}
+					addLabel success "You've successfully created a new Wiki Page. <br/> 
+						To edit your page click <a href=\"./[newUrl wiki.ws3 editWiki pageName $pageName]\">here</a>."
+					#If anything goes wrong, show the form again
+				} else { addLabel error $errors ; wikiForm 1 }
+			} 
+		}
+	}
+}
+proc listAllWikiPages {} {
+	displayWikiPage { 
+		set WikiPages [WikiDB eval {SELECT PageId,PageName,Creator,CreationTime FROM PageInfo}]
+		if {$WikiPages != ""} {
+			web::put {<table border="1">}
+			web::putx {<tr><th>Page Id</th><th>Page Name</th><th>Creator</th><th>Creation Date </th> </tr>}
+			set trClass "" ; set odd 1
+			foreach {id name creator creationtime} $WikiPages {
+				if {[expr {$odd %2}] == 0} { set trClass {style="background-color:#EEEEFF"} } else { set trClass {} }
+				web::putx "<tr $trClass><td><a href=\"[web::cmdurl default page $id]\">$id</a></td><td><a href=\"[web::cmdurl default page $name]\">[join $name]</a></td><td>$creator</td><td>[givetime $creationtime]</td></tr>"
+				incr odd
+			}
+			web::put {</table>}
+		}
+	}
+}
+proc pageHistory {} {
+	set pageName [web::param page]
+	
+	displayWikiPage { 
+		#It's usually a digit
+		if {[string is digit $pageName]} { set pageName [WikiDB eval {SELECT PageName FROM PageInfo WHERE PageId=$pageName}] }
+	 	set WikiPages [WikiDB eval {SELECT PageName,PageModification,LastModification,LastAuthor,LastIP FROM PageData WHERE PageName=$pageName ORDER BY PageModification DESC}]
+		if {$WikiPages != ""} {
+			web::put "<h3>Page modifications for $pageName </h3><table border=\"1\">"
+			web::putx {<tr><th>Modification</th><th>Last Edit Time</th><th>Last Author</th></tr>}
+			set trClass "" ; set odd 1
+			foreach {name pagemod lastmod lastauthor lastip} $WikiPages {
+				if {[expr {$odd %2}] == 0} { set trClass {style="background-color:#EEEEFF"} } else { set trClass {} }
+				#TODO: Show the last modification link & make it work
+				web::putx "<tr $trClass><td><a href=\"[web::cmdurl default page $name pageReview $pagemod]\">$pagemod</a></td><td>[givetime $lastmod]</a></td><td>$lastauthor"
+				if {[VerifyLevel 4]} { web::put " @ $lastip" }
+				web::put "</td></tr>"
+				incr odd
+			}
+			web::put {</table>}
+		}
+	}
+}
+proc randomWikiPage {} {
+	set totalPages [WikiDB eval {SELECT count(PageID) FROM PageInfo}]
+	set page [rnd 1 $totalPages]
+	set realPage [WikiDB eval {SELECT PageName from PageInfo where PageID=$page}]
+	web::param -set page [join $realPage]
+	ShowWikiPage $page
+}
+#Remove the braces for the code part, I gave up.. doesn't work well with regexp in another regexp
+proc removeBraces {withoutBraces} {
+	regsub  -nocase -all -- {\[} $withoutBraces {\&#91;} withoutBraces
+	regsub -nocase -all -- {\]} $withoutBraces {\&#93;} withoutBraces
+	return $withoutBraces
+}
+
+#Process markup when showing the text and when editing it:). 
+#The page must be saved with the same markup and using reg-exp every time, this way it's easier to edit
+proc processWiki {text} {
+	regsub -nocase -all -- {\[code\](.+)\[/code\]} $text  {<pre>\1</pre>} text
+	
+	#set a list of WikiTag followed by htmlTAG to be regsubbed
+	#please enclude EACH LIST ITEM BETWEEN acolades! {} otherwise the regexp won't work:)
+	#also, XHTML nesting will not be controlled
+	set wikiTags {
+		{\[b\]} {<span class="bold">}  {\[/b\]} {</span>}
+		{\[i\]} {<span class="italic">}  {\[/i\]} {</span>}
+		{\[s\]} {<span class="strike">}  {\[/s\]} {</span>}
+		{\[u\]} {<span class="underline">}  {\[/u\]} {</span>}
+		
+		{\[ul\]} {<ul>} 	{\[/ul\]} {</ul>}
+		{\[ol\]} {<ol>}		{\[/ol\]} {</ol>}
+		{\[li\]} {<li>}		{\[/li\]} {</li>}
+		{\[table\]} 	{<table border="1">} {\[/table\]} {</table>}
+		{\[tr\]} {<tr>}		{\[/tr\]} {</tr>}
+		{\[td\]} {<td>}		{\[/td\]} {</td>}
+				
+		{\[div\]} {<div>}	{\[/div\]} {</div>}
+		{\[p\]} {<p>}	{\[/p\]} {</p>}		{\[n\]} {<br/>}
+		{\[quote\]} {<blockquote>}		{\[/quote\]} {</blockquote>}
+		
+		{\[sub1\](.+)\[/sub1\]} {<h3>\1</h3><hr/>}
+		{\[sub2\](.+)\[/sub2\]} {<h4>\1</h4>}
+		{\[sub3\](.+)\[/sub3\]} {<h5>\1</h5>}
+		{\[sub4\](.+)\[/sub4\]} {<h6>\1</h6>}
+		
+		{\[img\](.+)\[/img\]} {<img src="\1"/>}
+		{\[url=(.+)\](.+)\[/url\]} {<a href="\1" rel="nofollow">\2</a>}
+		{\[page=(.+)\](.+)\[/page\]} {<a href="./wiki.ws3?page=\1">\2</a>}
+		{\[profile\](.+)\[/profile\]} {<a href="./profile.ws3?profile=\1">\1</a>}
+		
+		{\[size=(\d+)\]} {<span style="font-size:\1px">}	{\[/size\]} {</span>}
+		{\[color=(.[^\]]+)\]} {<span style="color:\1">}	{\[/color\]} {</span>}
+	}
+	#Best way
+	foreach {wikiTag htmlTag} $wikiTags {
+		regsub -nocase -all -line -- $wikiTag $text $htmlTag text
+	} 
+	#using the newline and line feed to be sure input is correct
+	regsub -nocase -all -- {\n\r} $text {<br/>} text
+	if {0} {
+		<li class="toclevel-2 tocsection-3">
+		<a href="#Editing_wiki_pages">
+		<span class="tocnumber">2.1</span>
+		<span class="toctext">Editing wiki pages</span>
+		</a>
+
+		<h3>
+		<span id="Editing_wiki_pages" class="mw-headline">Editing wiki pages</span>
+		</h3>
+	}
+	#Process Headings & Contents links
+	linsert [list $text] 0 <div> ; linsert [list $text] end <div>
+	return $text
+}
+
+#Remember to set the timeout for Sqlite:  WikiDatabase timeout 700
+proc ShowWikiPage {page {pageReview ""}} {
+	array set PageInfo [SelectPageInfo $page $pageReview]
+	displayWikiPage { 	
+		#set pageName [split $page "_"]
+		if {$PageInfo(PageId) == "" || $PageInfo(PageModification) == 0} {
+			web::put "This page doesn't exist yet.. but if you want, you can create it:)"
+		} else {
+			web::putx "[processWiki $PageInfo(PageContent)]<br/><hr/>"
+			web::putx "	<p>Page last edited by $PageInfo(LastAuthor) "
+			if {[VerifyLevel 4]} { web::put " @ $PageInfo(LastIP)"}
+			web::put " at [givetime $PageInfo(LastModification)]</p>" 
+		}
+	}
+}
+
+#############
+#Dispatching commands
+#############
+
+web::command default {
+	set page [web::param page]
+	set pageReview [web::param pageReview]
+	if {$page == ""} {
+		#Display default page
+		displayWikiPage { 	
+			array set PageInfo [SelectPageInfo 1]
+			web::putx [processWiki $PageInfo(PageContent)]
+		}
+	} else {
+		#TODO control if page exists, if it exists show it, otherwise error
+		ShowWikiPage $page $pageReview
+	}
+}
+web::command createNewWiki {
+	displayWikiPage { wikiForm 1 }
+}
+web::command editWiki {
+	displayWikiPage { wikiForm 2 }
+}
+web::command listAllWikiPages {
+	listAllWikiPages
+}
+web::command SaveOrEditWiki {
+	SaveOrEditWiki
+}
+web::command pageHistory {
+	pageHistory
+}
+web::command randomWikiPage { 
+	randomWikiPage
+}
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+WikiDB close
+} on error {myerror} {web::put "There was an error: $myerror <br/><br/> $errorInfo"}

@@ -1,0 +1,114 @@
+#	xhtml 1.0 by Clinciu Andrei
+# XHTML Generator for Life Beyond Apocalypse.
+# entities are included, even though websh contains them
+
+#package require Tcl 8.5
+package provide xhtml 1.0
+
+namespace eval ::xhtml {
+
+}
+
+#make Inputs
+
+proc htmlInput {name {type "text"} {value ""} {extra ""}} {
+	return "<input type=\"$type\" name=\"$name\" id=\"$name\" value=\"$value\" $extra />"
+}
+proc ::xhtml::label {text {for ""} {class ""}} {
+	return "<label class=\"$class\" for=\"$for\">$text</label>"
+}
+#add labels
+proc addLabel {type text} {
+	#choose out of info error warning success
+	web::putx {<div class="{web::put $type}" > {web::put $text}</div>}
+}
+#Make a bold span
+proc boldSpan {text} {
+	return "<span class=\"bold\">$text</span>"
+}
+#Make a color span & bold it
+proc colorSpan {text color} {
+	return "<span class=\"bold\" style=\"color:$color\">$text</span>"
+}
+
+# generateForm
+# Create a POST form 
+proc generateForm {action class text} {
+	append html "<form method=\"post\" action=\"$action\" class=\"$class\">"
+	append html $text
+	append html "</form>"
+	return $html
+}	
+
+#Link generation
+proc newLink {link text {extra ""}} {
+	return "<a href=\"$link\" ${extra}>$text</a>"
+}			
+# ::html::h1
+proc ::xhtml::h {level string {param {}}} {
+    return "<[string trimright "h$level [tagParam h$level $param]"]>$string</h$level>\n"
+}
+
+# ::html::mailto
+# Results:
+#	A <a href=mailto> tag </a>
+
+proc ::xhtml::mailto {email {subject {}}} {
+    ::set html "<a href=\"mailto:$email"
+    ::if {[string length $subject]} {
+	append html ?subject=$subject
+    }
+    append html "\">$email</a>"
+    return $html
+}
+
+# ::xhtml::list
+# TODO generate lists
+
+# ::html::urlParent --
+#	This is like "file dirname", but doesn't screw with the slashes
+#       (file dirname will collapse // into /)
+
+proc ::xhtml::urlParent {url} {
+    ::set url [string trimright $url /]
+    regsub -- {[^/]+$} $url {} url
+    return $url
+}
+
+# ::xhtml::html_entities --
+#	Replaces all special characters in the text with their
+#	entities.
+
+proc ::xhtml::html_entities {s} {
+    variable entities
+    return [string map $entities $s]
+}
+
+# ::html::nl2br --
+#	Replaces all line-endings in the text with <br> tags.
+
+proc ::xhtml::nl2br {text} {
+    return [string map [list \n\r <br/> \n <br/> \r <br/>] $text]
+}
+#Doctype definition
+proc ::xhtml::doctype {} {
+	return {<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">}
+}
+
+# ::xhtml::css
+#	Create the text/css tag and return it
+
+proc ::xhtml::css {href} {
+	set tag "<link rel=\"stylesheet\" type=\"text/css\" href=\"[web::htmlify -numeric $href]\" />\n"
+	return $tag
+}
+
+# ::xhtml::js
+#   Return the javascript link
+
+proc ::xhtml::js {href} {
+	set tag "<script language=\"javascript\" type=\"text/javascript\" src=\"[web::htmlify -numeric $href]\"></script>\n"
+	return $tag
+
+}
+

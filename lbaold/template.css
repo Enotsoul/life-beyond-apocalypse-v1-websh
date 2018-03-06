@@ -1,0 +1,419 @@
+* {
+	font-family:sans-serif;
+	font-size:15px;
+}
+body {
+	margin:0;
+	padding:0;
+	background-image: url(./images/enterinferno.jpg);
+	/*background-image: url(./images/aburedterra.jpg);*/
+	background-repeat: no-repeat;
+	background-position: bottom center;
+	background-attachment: fixed;
+	background-color: #223638;
+	color:white;
+	margin: 0 auto;
+	font-size:1em;
+	width:1020px;
+
+}
+h1 {
+	width:500px;
+	height:110px;
+	background-image: url(./images/lba.png);
+	padding:0;
+	margin:0;
+}
+h2,h3,h4,h5,h6 {
+padding:0;
+margin:0;
+margin-top: 3px;
+margin-bottom: 3px;
+}
+lol {
+	/* for IE */
+	 filter:alpha(opacity=80);
+	 /* CSS3 standard */
+	 opacity:0.8;
+}
+.hidden {
+	height:1px;
+	left:0px;
+	overflow:hidden;
+	position:absolute;
+	top:-10000px;
+	width:1px;
+}
+#headleft {
+	width: 510px;
+	float:left;
+}
+#headright {
+	margin-left:7px;
+	width:370px;
+	float:left;
+}
+#headmenu {
+	clear:both;
+	float:left;
+	padding: 0;
+	margin: 3px 0;
+}
+#headmenu ul {
+	padding: 0 5px;
+}
+#headmenu ul li {
+	display:inline;
+	list-style-type:none;
+}
+.links  {
+	clear:both; 
+	padding: 0px;
+	margin: -7px 0;
+}
+.links ul {
+	padding: 0 5px;
+}
+.links li {
+	display:inline;
+	list-style-type:none;
+}
+#container {
+
+}
+#subcontainer {
+clear:both;
+}
+#menu {
+	float:left;
+	width:350px;
+}
+
+#menu .misc, .misc {
+		/* for IE */
+	 filter:alpha(opacity=85);
+	 /* CSS3 standard */
+	 opacity:0.85;
+	margin-top: 7px;
+	margin-bottom: 7px;
+	background-color:#432702;
+	padding:7px;
+	border: 4px solid #c77f1d;
+}
+#content {
+	margin: 7px 0px 7px 7px;
+	/*
+	background-position: bottom center;
+	background-image: url(./images/entropy.jpg);
+	
+*/
+	background-color:#432702;
+	border: 4px solid #c77f1d;
+		/* for IE */
+	 filter:alpha(opacity=90);
+	 /* CSS3 standard */
+	 opacity:0.90;
+	padding: 7px;
+	float:left;
+	width: 640px;
+	height:auto;
+}
+#content p {
+
+	margin:0px;
+	padding: 3px;
+	color:white;
+	background: #20180D;
+	display:block;
+}
+#extendedContent {
+	background-color:#432702;
+	border: 4px solid #c77f1d;
+		/* for IE */
+	 filter:alpha(opacity=85);
+	 /* CSS3 standard */
+	margin: 7px 0px 7px 0px;
+	padding:7px;
+	float:left;
+	width: 1000px;
+	height:auto;
+}
+
+#map {
+	padding:0;
+	border:0;
+	margin:0;
+	background: url(./images/buildings/Normal.gif) repeat; 	
+	border: 4px solid #c77f1d;
+}
+#map table {
+	float:left;
+}
+#map td.head {
+	color:#6A994A;
+	background:#C4CBBF;
+	text-align:center;
+	font-weight:bold;
+	width: 0;
+	height: 0;
+}
+#map td {
+	width:130px;
+	height:130px;
+	/*background: #606868;*/
+	text-align:center;	
+	vertical-align: text-top;
+	
+}
+#map td div {
+/*	margin: 0 7px;*/
+	text-align: center;
+	font-size:13px;
+	
+/*
+	background: lightgrey;
+	border: 5px ;
+	border-style:outset;
+	padding:3px;*/
+}
+#map td .player, a.player {
+	border: 1px;
+	border-style:dotted;
+	color:#000000;
+	background:#ACE3D1;
+	text-decoration:none;
+	margin-right: 3px;
+	display:inline-block;
+	font-size:12px;
+}
+#map a {
+	color:#B2141C;
+	font-size: 12px;
+}
+
+#map td div.powered {
+	background: #E3E342 ;
+}
+#map td div.active {
+	background: #9BE699;
+}
+#map td div.unknown {
+	background: #D2DBDD;
+	vertical-align: top;
+}
+#map td div.ruined {
+	background: #C2ACC5;
+}
+#map td div.occupied {
+	background: #D2ADAD;
+}
+
+form.reg {
+	width: 360px;
+}
+form.map {
+	display:inline;
+}
+form.map input[type=submit] {
+	margin: 2px 3px;
+	width:auto;
+	display:inline;
+	padding: 1px 3px;
+}
+form p {
+	margin:1px 0;
+}
+form fieldset {
+	padding:7px;
+	margin-bottom:7px;
+}
+form label {
+margin-bottom:7px;
+clear:left;
+float:left;
+width:180px;
+}
+form label.map {
+	float: none;
+	width:auto;
+	margin: 0 3px;
+}
+form .none  { clear: both; float: none;}
+form input {
+margin-bottom: 3px;
+width:145px;
+}
+form input[type=submit] {
+	margin-bottom: 7px;
+	width:auto;
+	display:inline;
+	padding: 1px 3px;
+}
+form select {
+	
+	margin-left:0px;
+}
+form #button {
+clear: both;
+margin-right:100px;
+}
+a {
+	color: #20D9EB;
+}
+#footer {
+	/* for IE */
+	 filter:alpha(opacity=85);
+	 /* CSS3 standard */
+	 opacity:0.85;
+	background-color:#432702;
+	border: 4px solid #c77f1d;
+	margin-top:10px;
+	clear:both;
+	text-align:center;
+	width:700px;
+	margin: auto;
+}
+#footer p {
+	height: 10px;
+	margin:7px;
+	font-size: 0.8em;
+}
+.extendedItem {
+	background-color:#E2F5F5;
+	border:1px solid; 
+	padding: 3px 0 5px 0;
+	color:#095BB7;
+}
+#items {
+	border: 1px solid;
+}
+.item {
+	border: 1px solid;
+	background-color: white;
+	color:#60787A;
+	padding: 1px;
+	margin-left: 2px;
+}
+.info {
+	border: 3px outset;
+	margin: 7px 0;
+	padding: 3px;
+	background-color:  #E2F5F5;
+	color: #196FDA;
+}
+.warning {
+	border: 3px outset;
+	margin: 7px 0;
+	padding:3px;
+	background-color:  #E2F5F5;
+	opacity: 1;
+	color: #EC9114; /*#D47B08;*/
+}
+.error {
+	border: 3px outset;
+	margin: 7px 0;
+	padding:3px;
+	background-color:  #E2F5F5;
+	color:  #7E2D5C; /*#C52D04;*/
+}
+.success {
+	border: 3px outset;
+	margin: 7px 0;
+	padding:3px;
+	background-color:  #E2F5F5;
+	color:  green;
+}
+.bold {
+	font-weight: bold;
+}
+.youHave {
+color: #ABD644;
+}
+.youDont {
+color:  white;
+}
+
+.msg table, .msg th,  .msg td {
+	background-color:#465145;
+	border: 1px solid black;
+}
+/* Wiki stuff */
+.bold {font-weight:bold;}
+.italic {font-style: italic;}
+.strike {text-decoration: line-through;}
+.underline {text-decoration: underline;}
+
+
+blockquote {
+  font: 1.1em normal helvetica, sans-serif;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  margin-left: 30px;
+  padding-left: 15px;
+  border-left: 3px solid lightgreen;
+  font-style: italic;
+} 
+blockquote:before { content: open-quote }
+blockquote:after  { content: close-quote }
+/*divs*/
+#wikiMenu {
+	margin: 0px;
+	width:130px;
+	color:black;
+	float:left;
+}
+#wikiMenu .submenu {
+	width:130px;
+	margin-bottom: 7px;
+	color:black;
+	padding:3px;
+	background:white;
+	border:solid 1px orange;
+}
+#wikiMenu .submenu p {
+	margin-top: 3px;
+	margin-bottom:5px;
+	text-align:center;
+	border-bottom:1px dotted;
+	color:green;
+}
+#wikiMenu ul {
+	list-style-type:none;
+	padding:0px;
+	margin: 0px;
+}
+#wikiContent {
+	margin: 0;
+	padding: 3px;
+	width:850px;
+	background:white;
+	border:solid 1px orange;
+	color:black;
+	float:right;
+	height:auto;
+	min-height:200px;
+}
+#wikiContent h3 {
+	font-size:20px;
+}
+#wikiContent h4 {
+	font-size:18px;
+}
+#wikiContent h5 {
+	font-size:16px;
+}
+#wikiContent h6 {
+	font-size:14px;
+}
+#wikiContent a {
+color:#1080CB;
+}
+#wikiContent th {
+background-color:#CEC7BB;
+}
+/*jquery css*/
+.tooltip { position: absolute; top: 0; left: 0; z-index: 3; display: none;   background-color: #556566; }
+.tooltip.links {
+	background-color: #FF7C0A;
+	border: lightgreen 2px solid;
+}

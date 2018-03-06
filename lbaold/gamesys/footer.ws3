@@ -1,0 +1,11 @@
+
+#track the session id
+
+web::dispatch ;#-track sid
+#this deletes the session
+#state::invalidate
+
+# cleanup session & cookies (so we have no session crosstalk)
+state::delete
+LifeBeyond::delete
+

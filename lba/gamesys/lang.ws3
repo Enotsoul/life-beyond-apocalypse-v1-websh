@@ -1,0 +1,45 @@
+#############
+#Language Management
+#############
+set Languages [dict create \
+		English {Flag uk_flag.gif Lang en} \
+		Română {Flag ro_flag.gif Lang ro} \
+		Nederlands {Flag nl_flag.gif Lang nl}]
+
+proc Lost:lang {toTranslate {variables ""}} {
+	global Lang ;#upvar Lang Lang
+	return  [format "$Lang($toTranslate)" {*}$variables]
+}
+proc Lost:langForMsg {} {
+	return ""
+}
+proc PutFlags {} {
+	global Languages; #upvar #1 Languages Languages
+	append html "<div class='langBtn'>"
+	foreach lang [dict keys $Languages] {
+		append html "<a href=\"[newUrl index.ws3 changeLang Lang [dict get $Languages $lang Lang]]\" title='$lang'><img src=\"./lang/[dict get $Languages $lang Flag ]\" alt=\"$lang\" style='width:30px;height:15px;' /></a>"
+	}
+	append html "</div>"
+	return $html
+}
+#Set english as default if there is no language set
+proc CorrectLang {} {
+	set lang [LifeBeyond::cget Lang]
+	if {$lang == ""} { set lang en ; LifeBeyond::cset Lang en }
+	web::include [file dirname [web::config script]]/lang/${lang}.ws3 msg
+}
+#Set the correct Language by auth..
+proc GoodAuthLang {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set lang [LifeBeyond::cget Lang]
+	if {![string match *$lang* $LostPlayer(language)]} { set lang $LostPlayer(language) }
+	web::include [file dirname [web::config script]]/lang/${lang}.ws3 msg
+}
+
+#The dispatching so it works everywhere
+web::command changeLang {
+	InitSession
+	LifeBeyond::cset Lang [web:get Lang]
+	LifeBeyond::commit
+	Redirect [web::cmdurl default]
+}

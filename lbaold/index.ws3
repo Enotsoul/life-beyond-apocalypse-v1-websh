@@ -1,0 +1,35 @@
+
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+web::command default {
+	if {![IsAuthenticated]} {
+		page "Free online Persistent Browser Zombie Apocalypse Online Role Playing Game" "" {
+			#foreach request [web::request -names] {
+				#web::put "<p> $request : [web::request $request] </p>"
+			#}
+			
+			web::put  {<p><span class="bold">Life Beyond Apocalypse</span>(BETA) is a PBG (Persistent Browser Game) which means that the game goes on. It takes place in a world after the world has been destroyed and zombies wonder around. You can play either a Zombie or one of the four Human classes (Technician, Survivor, Mercenary or Sciencetist).</p> } 
+			web::put {<p>The game is currently in <span class="bold">BETA</span> phase which means that it's under development. Updates and bug fixes are made daily. If you see errors, please report them as fast as possible to lifebeyondapocalypse@gmail.com</p>}
+			web::putx "<p><a href=\"[newUrl auth.ws3 register]\">Register now!</a></p>"
+			web::putx "Your current lang: [LifeBeyond::cget Lang]"
+			}
+	} else  {
+		web::putx {<meta http-equiv="refresh" content="0;url=./map.ws3">}
+	} 
+}
+web::command chat {
+	if {![IsAuthenticated]} {
+		page "Chat on IRC" "" "" {
+			web::put {<a href="http://widget.mibbit.com/?settings=a34c7a1eac2f57db9948c551833dd721&server=irc.ircbox.com&channel=%23LifeBeyondApocalypse" target=_blank>For a separate window click here</a>}
+			web::put {<iframe width="800" height="640" src="http://widget.mibbit.com/?settings=a34c7a1eac2f57db9948c551833dd721&server=irc.ircbox.com&channel=%23LifeBeyondApocalypse"></iframe>}
+		}
+	} else {
+		page "Chat on IRC" "" "" {
+			array set LostPlayer [GlobalVar::carray get LostPlayer]
+			web::putx {<a href="http://widget.mibbit.com/?settings=a34c7a1eac2f57db9948c551833dd721&server=irc.ircbox.com&channel=%23LifeBeyondApocalypse&nick={web::put [web::uriencode $LostPlayer(username)]}" target=_blank>For a separate window click here</a>}
+			web::putx {<iframe width="800" height="640" src="http://widget.mibbit.com/?settings=a34c7a1eac2f57db9948c551833dd721&server=irc.ircbox.com&channel=%23LifeBeyondApocalypse&nick={web::put [web::uriencode $LostPlayer(username)]}"></iframe>}
+		}
+	}
+}
+
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+

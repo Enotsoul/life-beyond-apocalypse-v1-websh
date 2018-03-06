@@ -1,0 +1,55 @@
+try {	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+
+#############
+#Dispatching commands
+#############
+web::command default {
+	IsAuthenticated
+	page "Credits - Special thanks to"  {
+		web::put {<p>I'd could thank myself but it'd be self-idolatry. 
+		The coding for this game has started somewhere in March 2010. 
+		Finding a balance between college, my spare time and real life and this project was, and is kinda hard.</p>}
+		web::put {<p>I would like to thank the following people for giving me a hand and allowing me to use some of their work on this website.
+		I'm sorry if I've forgotten some people! If you ever encounter anything that is yours, please contact me for the propper credits:).</p>
+		<h3>Artwork - Images </h3>
+		<p>The <a target="_blank" href="http://www.pixeldam.net/">Pixeldam</a> community for the use of some remodded buildings for the game. </p>
+		<p>Thanks to <a target="_blank" href="http://alexiuss.deviantart.com/">Vitaly S Alexius</a> from <a target="_blank" href="http://www.svitart.com">http://www.svitart.com</a>  
+		for being able to use some VERY inspirational artwork. We highly recommend you visit his sites for the high quality products that he offers.</p>
+		<h3>Inspiration sources</h3>
+		<p>All Zombie & Post-Apocalypse games & movies... including <a target="_blank" href="http://en.wikipedia.org/wiki/Burntime">Burntime</a>.</p>
+		<p>Free browser game <a target="_blank" href="http://urbandead.com/">Urbandead</a>.</p>
+		}
+	}
+}
+web::command lostone {
+	IsAuthenticated
+	page "About LostOne "  {
+		web::putx {
+		<h3>About the Life Beyond Apocalypse project</h3>
+		<p>I always wanted to start my own game project. I never wanted a full grown 3D MMORPG, a 2D RPG was enough but still hard from scratch and alone. 
+		So I decided to do a web game. My first attempts where in PHP with some games like Devana and Mafia games(the net's full of them now).</p>
+		<p>I've been writing down game documentation for the past 2 years now. But i didn't know which platform best suited, 
+		I had some minor attempts in february 2009 but they failed. So in March 2010 I started working with mod_websh.</p>
+		<p>This site is what i've acomplished so far. Enjoy.</p>
+		<h3>About myself</h3><p> My name is  {web::put [boldSpan "Andrei (CAG)"]}, i'm currently a student at {web::put [newLink http://www.howest.be Howest target="_blank"]} in Kortrijk(Belgium) following NMCT.</p>
+		<p>You can contact me by sending a mail to lifebeyondapocalypse@gmail.com or if you're logged in, sending a PM to my main nickname(LostOne).</p
+		<p>One of my pseudonims is <span class="bold">Andrew Edmund Soulaviere</span> also nicknamed <span class="bold">Enot Soulaviere</span>.</p>
+		<p>Nicknames that associate with me are <span class="bold">LostOne, LordPraslea, Euxilius, Enotsoul</span>.</p>
+		<p></p>
+		}
+	}
+	
+}
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+	 
+} on error {bigError} { web::put "Some errors occured: $bigError"}
+
+
+

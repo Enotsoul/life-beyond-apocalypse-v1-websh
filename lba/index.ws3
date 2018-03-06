@@ -1,0 +1,27 @@
+
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+
+web::command default {
+	if {![IsAuthenticated]} {
+		indexPage
+	} else  {
+		web::putx {<meta http-equiv="refresh" content="0;url=./map.ws3">}
+	} 
+}
+web::command chat {
+	if {![IsAuthenticated]} {
+		page "Chat on IRC"   {
+			web::put {<a href="http://widget.mibbit.com/?settings=a34c7a1eac2f57db9948c551833dd721&server=mibbit.ircbox.net&channel=%23LifeBeyondApocalypse" target=_blank>For a separate window click here</a>}
+			web::put {<iframe width="800" height="640" src="http://widget.mibbit.com/?settings=a34c7a1eac2f57db9948c551833dd721&server=mibbit.ircbox.net&channel=%23LifeBeyondApocalypse"></iframe>}
+		}
+	} else {
+		page "Chat on IRC"  {
+			array set LostPlayer [GlobalVar::carray get LostPlayer]
+			web::putx {<a href="http://widget.mibbit.com/?settings=a34c7a1eac2f57db9948c551833dd721&server=mibbit.ircbox.net&channel=%23LifeBeyondApocalypse&nick={web::put [web::uriencode $LostPlayer(username)]}" target=_blank>For a separate window click here</a>}
+			web::putx {<iframe width="800" height="640" src="http://widget.mibbit.com/?settings=a34c7a1eac2f57db9948c551833dd721&server=mibbit.ircbox.net&channel=%23LifeBeyondApocalypse&nick=<? web::put [web::uriencode $LostPlayer(username)] ?>"></iframe>}
+		}
+	}
+}
+
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+

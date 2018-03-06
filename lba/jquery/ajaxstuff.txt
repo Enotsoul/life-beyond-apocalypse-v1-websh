@@ -1,0 +1,41 @@
+<a href="#"><img src="img/ro.png" id="choseRo" /></a>
+<a href="#"><img src="img/en.png" id="choseEn" /></a>
+<div id="content">
+<?php
+	include("lang/text.". $_SESSION['lang'] .".php");
+?>
+
+</div>
+
+<script type="text/javascript">                                         
+ 
+    $(document).ready(function() {
+		//search after the ID
+		$("#choseRo").click(function() {
+			$('#content').load('lang/text.ro.php');
+			
+			$.ajax({
+			   type: "POST",
+			   url: "functions/setlang.php",
+			   data: "lang=ro",
+			   success: function(msg){
+				 alert( "merge" );
+			   }
+			 });
+		 });
+		 $("#choseEn").click(function() {
+			$('#content').load('lang/text.en.php');
+			
+			$.ajax({
+			   type: "POST",
+			   url: "functions/setlang.php",
+			   data: "lang=en",
+			   success: function(msg){
+				 alert( "ok!" );
+			   }
+			 });
+		 });
+
+	});
+
+ </script>   

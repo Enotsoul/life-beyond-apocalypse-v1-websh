@@ -1,0 +1,47 @@
+	#send the header
+
+	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+web::command default {
+	if {![IsAuthenticated]} {
+		page "Game options and items shop and payment" "" {
+			#foreach request [web::request -names] {
+				#web::put "<p> $request : [web::request $request] </p>"
+			#}
+			web::put "This is the default page.."
+			web::put {<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post">
+<input type="hidden" name="cmd" value="_s-xclick">
+<input type="hidden" name="hosted_button_id" value="AYZU4MD5FZV6S">
+<input type="image" src="https://www.sandbox.paypal.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+<img alt="" border="0" src="https://www.sandbox.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
+</form>
+}
+		web::put [newUrl payment.ws3 paypalComplete]
+		}
+	} else  {
+		web::putx {<meta http-equiv="refresh" content="0;url=./map.ws3">}
+
+	} 
+}
+web::command paypalComplete {
+	if {![IsAuthenticated]} {
+		page "Game options and items shop and payment" "" {
+			#foreach request [web::request -names] {
+				#web::put "<p> $request : [web::request $request] </p>"
+			#}
+			web::put "This the Paypal Complete Payment Page.."
+			foreach key [web::formvar -names]]  {
+				append html "$key is [web::formvar $key]</br>"
+			}
+			
+		}
+	} else  {
+		web::putx {<meta http-equiv="refresh" content="0;url=./map.ws3">}
+
+	} 
+}
+
+#Include footer
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+
+

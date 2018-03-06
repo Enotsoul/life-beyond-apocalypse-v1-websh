@@ -1,0 +1,138 @@
+#load [file dirname [web::config script]]/gamesys/libsqlite3.6.so Sqlite3
+package require sqlite3
+package require mysqltcl
+#set the database type sqlite3 or mysql
+set database mysql
+
+proc rnd {min max} {
+	expr {int(($max - $min + 1) * rand()) + $min}
+}
+proc DatabaseQuery {statement} {
+	global database lba
+	if {[catch {
+		if {$database == "sqlite3"} {
+			set toReturn [lba eval {$statement}]
+		} else {
+			set toReturn [::mysql::sel $lba $statement -flatlist]
+		}
+	} databaseError]} { web::put " Database error <b>Within</b> $databaseError<br/>" ; exit	}
+	return $toReturn
+}
+proc getLastId {} {
+	global database lba
+	if {[catch {
+		if {$database == "sqlite3"} {
+			set toReturn [lba eval {$statement}] ;# todo.. search how to do this in sqlite
+		} else {
+			set toReturn [::mysql::insertid $lba]
+		}
+	} databaseError]} { web::put " Database error <b>Within</b> $databaseError<br/>" ; exit	}
+	return $toReturn
+}
+proc DatabaseExec {statement} {
+	global database lba
+	if {[catch {
+		if {$database == "sqlite3"} {
+			set toReturn [lba eval {$statement}]
+		} else {
+			set toReturn [::mysql::exec $lba $statement]
+		}
+	} databaseError]} { web::put " Database error <b>Within</b> $databaseError<br/>" ; exit	}
+	return $toReturn
+}
+proc DatabaseFetchArray {statement} {
+	global database lba
+	if {[catch {
+		if {$database == "sqlite3"} {
+			lba eval {$statement} sqlarray {}
+	
+		} else {
+			set values [mysql::sel $lba $statement -flatlist]
+			set cols [::mysql::col $lba -current name]
+			foreach val $values col $cols { set sqlarray($col) $val }
+		}
+	} databaseError] == true} { web::put " Database error <b>Within</b> $databaseError<br/>" ; exit	}
+	return [array get sqlarray] 
+}
+
+
+#Command fixed again
+proc MakeNewMap {town owner maxx maxy {accesible 1}} {
+#n0 means a maximum of 1-2 such buildings per city at a 5x5 distance from eachother! N1= 7 max, 3x3 distance N2= 15 max 2x2 n3= 25 max n4= kinda unlimited.. 
+set TotalBuildings [DatabaseQuery "SELECT max(id) from BuildingsDesc"]
+#Start putting buildings, starting from the left upper corner
+	if {$owner != 1}  {
+		set owner [DatabaseQuery "SELECT userID from LostPlayers where username='$owner'" ]
+	}
+	DatabaseExec "INSERT INTO Towns (town,userID,playable) values ('$town','$owner',$accesible)"
+	set townID [getLastId]
+	for {set miny 1} {$miny <= $maxy} {incr miny} {
+		for {set minx 1} {$minx <= $maxx} {incr minx} {
+			set random [rnd 1 $TotalBuildings]
+			array set Building [DatabaseFetchArray "select * from BuildingsDesc where id='$random'"]
+			set count [DatabaseQuery "select count(buildingtypeID) from Buildings where buildingtypeID=$Building(id)"]
+			switch $Building(necessity) {
+				5 { set dx 5 ; set dy 5; set maxcity 30 }
+				4 { set dx 4 ; set dy 4; set maxcity 70 }
+				3 { set dx 3 ; set dy 3; set maxcity 130 }
+				2 { set dx 2 ; set dy 2; set maxcity 170 }
+				1 { set dx 1 ; set dy 1; set maxcity 300 }
+			}
+			set buildings [DatabaseQuery "select buildingtypeID from Buildings where (x between $minx-$dx and $minx+$dx) and (y between $miny-$dy and $miny+$dy) and townID='$townID'"]
+			if {$count >= $maxcity || [lsearch $buildings $Building(id)] != -1} { 
+				incr minx -1
+			} else {
+				set damage [rnd 10 100]
+				set barricades [rnd 0 70]
+				set radiation [rnd 0 3]
+
+				DatabaseExec "INSERT INTO Buildings (townID,buildingtypeID,description,damage,status,barricades,radiationLevel,x,y) values ('$townID','$Building(id)','No description','$damage','unknown','$barricades','$radiation','$minx','$miny')"
+			}
+		}
+	}
+	set time [clock seconds]
+	DatabaseExec "INSERT INTO System (Town,GameHour,lastTurnTime) VALUES('$town',1,$time)"
+}
+
+#TODO: Make this better.. Longer.. Add more stuff
+proc NewTurn {} {
+	set toSplit  [DatabaseQuery "select msgTime,readMsg FROM Messages where fromUser='SYSTEM' and toUser='SYSTEM' "]
+	set lastTurn [lindex $toSplit 0]; set read [lindex $toSplit 1]
+	set newTurn [clock add $lastTurn 60 minutes]
+	set timenow [unixtime]
+	set timeFuture [clock add $timenow -1 day]
+	
+	if {$newTurn <= $timenow} {
+		#This calculates the hours passed since it last updated the database
+		set difference [expr {abs($newTurn-$timenow)/(60*60)}]
+		if {$difference == 0} { set difference 1 }
+		puts "so far so good"
+		#Energy handling
+		DatabaseExec "UPDATE LostPlayers SET energy=energy+10*$difference WHERE energy<maxenergy"
+		DatabaseExec "UPDATE LostPlayers SET health=health+1*$difference WHERE health<maxhealth and waterlvl>0 and foodlvl>0"
+		DatabaseExec "UPDATE LostPlayers SET waterlvl=waterlvl-1*$difference,foodlvl=foodlvl-1*$difference WHERE  waterlvl>0 and foodlvl>0"
+		#If the difference was too big.. set it back to the right situation
+		DatabaseExec "UPDATE LostPlayers SET energy=maxenergy WHERE energy>maxenergy"
+		DatabaseExec "UPDATE LostPlayers SET health=maxhealth WHERE health>maxhealth"
+		DatabaseExec "UPDATE LostPlayers SET foodlvl=0 WHERE foodlvl<0"
+		DatabaseExec "UPDATE LostPlayers SET waterlvl=0 WHERE  waterlvl<0"
+		
+		#Generator handling
+		DatabaseExec "UPDATE Buildings SET generatorTime=generatorTime-1*$difference WHERE generatorTime>0"
+		DatabaseExec "UPDATE Buildings SET status='active',generatorTime=0 WHERE generatorTime<=0 and status='powered'"
+		
+		#Delete Inactive accounts
+		DatabaseExec "DELETE FROM LostPlayers where activated='0' AND created<='$timeFuture'"
+		#Do stuff when more then one week has occured - or one full day?
+		#For example it should be night/rain..
+		if {[expr {$read*$difference}] >= 24} { 
+			DatabaseExec "UPDATE Messages set msgTime='$timenow',readMsg=1 WHERE toUser='SYSTEM' and fromUser='SYSTEM'"
+		} else {
+			DatabaseExec "UPDATE Messages set msgTime='$timenow',readMsg=readMsg+1 WHERE toUser='SYSTEM' and fromUser='SYSTEM'"
+		}
+	}
+}
+# Use this to export the db
+#set exportTime [clock format [clock seconds] -format {%d-%m-%Y_%H:%M}]
+#mysqldump --opt -h localhost -u lifebeyond -pApocalYps3 lifebeyondapocalypse > /home/lostone/lba_${exportTime}.sql
+puts "works"

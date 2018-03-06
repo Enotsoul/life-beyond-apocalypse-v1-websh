@@ -1,0 +1,90 @@
+try {	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+
+#############
+#Misc Procedures
+#############
+proc SearchItem {} {
+	global errors 
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set search [web::formvar search]
+	if {$search == ""} { append errors "Huh? You need to use the form... not something else:)" } 
+	if {[VerifyEnergy $LostPlayer(energy) 1]} {
+		incr LostPlayer(energy) -1
+		set items [DatabaseQuery "SELECT ItemName,ChanceFound FROM Buildings,BuildingItems where (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.Type=BuildingItems.Type and Buildings.Town='$LostPlayer(town)')"]
+		set buildingStuff [DatabaseQuery "SELECT Buildings.Status,BuildingsDesc.Status,Buildings.Type FROM Buildings,BuildingsDesc where (Buildings.x='$LostPlayer(x)' and Buildings.y='$LostPlayer(y)' and Buildings.Type=BuildingsDesc.Type and Buildings.Town='$LostPlayer(town)')"]
+		
+		set lit [expr {[string match -nocase "*powered*" $buildingStuff]?1.25:1}]
+		if {$lit == 1} {	set dark [expr {[string match -nocase "*dark*" $buildingStuff]?0.75:1}]		} else { set dark 1 }
+		set ruined [expr {[string match -nocase "*ruined*" $buildingStuff]?0.75:1}]
+		
+		#Skills handling done here
+		set skills [DatabaseQuery "SELECT Skill from PlayerSkills WHERE username='$LostPlayer(username)'"]
+		set looting [expr {[lsearch -nocase $skills "Looting"] >= 0 ?  0.75 : 1}]
+		set recycler [expr {[lsearch -nocase $skills "Recycler"] >= 0 ?  yes : no}]
+		set isJunkyard [string match -nocase "*Junkyard*" $buildingStuff]
+		#TODO exclude dark if it's powered
+		set nrItem  [rnd 0 [expr {[llength $items]/2-1}]]
+		foreach {it ci} $items {
+			if {$recycler == yes && $isJunkyard} { 
+				lappend chanceItems [expr {$ci+2}]
+			} else { lappend chanceItems $ci }
+			lappend forItems $it 
+		}
+		set ChanceItem [lindex $chanceItems $nrItem]
+		set Item [lindex $forItems $nrItem]
+		if {[string match -nocase "*none*" $Item]} { append errors "You started searching and soon realize that there's nothing here to search!" }
+		#The following could work but i wouldnt uset it
+		#set ChanceItem [lindex $items [expr {$nrItem==0 ? $nrItem+1 : $nrItem*2}]]
+		#set Item [lindex $items [expr {$nrItem==0 ? $nrItem : $nrItem*2-1}]]
+		
+		#Upperbound can be between 50 and 100.. let's keep it 100:D
+		set chanceToFind [rnd 1 100]
+		#Ruined*Dark*Lit*ChanceItem/(double(100)*Looting)*100
+		set chanceFound [expr {$ruined*$dark*$lit*$ChanceItem/(double(100)*$looting)*100}]
+		#web::put "chance to find: $chanceToFind and chanceFound: $chanceFound item itself: $Item  $ruined*$dark*$lit*$ChanceItem "
+
+		if {$chanceToFind > $chanceFound} {
+			append errors "You started searching for something usefull but you didn't find anything:("
+		} else { 
+			#FIXED set the encumbrance and if it's above 100, remove it afterwards so the encumbrance doesn't get set if you don't get the item
+			set itemEncumbrance [DatabaseQuery "SELECT encumbrance from ItemsDesc where name='$Item'"]
+			incr LostPlayer(encumbrance) $itemEncumbrance
+			if {$LostPlayer(encumbrance) > 100} { append errors "You found $Item but you are at maximum carrying capacity so can't take it. Drop something first. " ;  incr LostPlayer(encumbrance) -$itemEncumbrance }
+			incr LostPlayer(exp) 1 
+		}
+		set LostPlayer(lastAction) [unixtime]
+		if {$LostPlayer(infected)==1} { incr LostPlayer(health) -1 }
+		DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastaction='$LostPlayer(lastAction)', exp='$LostPlayer(exp)', encumbrance='$LostPlayer(encumbrance)',health='$LostPlayer(health)' WHERE username='$LostPlayer(username)'"
+
+	} 
+	
+	if {[string length $errors] ==  0} {
+		DatabaseExec "INSERT INTO Items (Item,Username,subitem,break,share) VALUES ('$Item','$LostPlayer(username)',0,5,0)"
+		addLabel success "You have found something: <span class=\"bold\"> $Item </span>."
+		web::put [ItemImage $Item]
+	} 
+	GlobalVar::carray set LostPlayer [array get LostPlayer]
+}
+#############
+#Dispatching commands
+#############
+web::command default {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		DisplayMap
+	SaveSession
+	}
+}
+web::command searchItems {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		DisplayMap {  SearchItem }
+	SaveSession
+	}
+}
+#Include & End
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+} on error {bigError} { web::put "Some errors occured: $bigError"}

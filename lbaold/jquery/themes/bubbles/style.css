@@ -1,0 +1,53 @@
+.grumbleNote {
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -webkit-box-shadow: 0 5px 10px #CCC;
+    background-color: #B1D4F4;
+    background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(255,255,255,.9)), to(rgba(255,255,255,0)));
+    border-color: #777;
+    border-style: solid;
+    border-width: 4px;
+    box-shadow: 0 5px 10px #CCC;
+    color: black;
+    font-family: "Lucida Grande";
+    font-size: 11px;
+    margin: 0;
+    padding: 7px 10px 7px 50px;
+    width: 200px;
+    cursor: pointer;
+}
+.grumbleNote .grumbleTitle {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+.grumbleNote .grumbleIcon {
+    background-image: url(notice.png);
+    position:absolute;
+    top:7px;
+    left:10px;
+    height: 30px;
+    width: 30px;
+}
+.grumbleNote .grumbleIcon.error {
+	border: none;
+	margin: 0;
+	padding:0;
+    background-image: url(error.png);
+    background-color:none;
+}
+.grumbleNote .grumbleIcon.success {
+	border: none;
+	margin: 0;
+	padding:0;
+    background-image: url(success.png);
+}
+.grumbleNote:hover {
+    background-color: rgba(177, 212, 244, .7);
+}
+.grumbleNote:active {
+    margin-top:1px;
+}
+.grumbleMessage {
+ font-size:13px;
+}

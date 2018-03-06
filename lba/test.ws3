@@ -1,0 +1,6 @@
+web::command default {
+	set name [web::formvar name]
+	set nick [web::formvar nick]
+	web::putx "var serverObj.html= '$name	is trying to be awesome... but isnt working allright.. and how about $nick'  "
+}
+web::dispatch 

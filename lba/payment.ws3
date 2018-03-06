@@ -1,0 +1,83 @@
+	#send the header
+
+	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+
+web::command default {
+	if {![IsAuthenticated]} {
+		page "Game options and items shop and payment" "" {
+			web::put "This is the default page.."
+			
+		web::put [newUrl payment.ws3 paypalComplete]
+		}
+	} else  {
+		#web::putx {<meta http-equiv="refresh" content="0;url=./map.ws3">}
+		array set LostPlayer [GlobalVar::carray get LostPlayer]
+		page "Game options and items shop and payment" "" {
+			web::config putxmarkup  tag
+web::putx {
+			<form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post">
+<input type="hidden" name="cmd" value="_s-xclick">
+<table>
+<tr><td><input type="hidden" name="on0" value="Zombie Revival">Zombie Revival</td></tr><tr><td><select name="os0">
+	<option value="1 Lab Mixture">1 Lab Mixture €1,50</option>
+	<option value="5 Lab Mixtures">5 Lab Mixtures €7,00</option>
+	<option value="10 Lab Mixtures">10 Lab Mixtures €13,00</option>
+	<option value="20 Lab Mixtures">20 Lab Mixtures €23,00</option>
+	<option value="100 Lab Mixtures">100 Lab Mixtures €90,00</option>
+</select> </td></tr>
+<tr><td><input type="hidden" name="on1" value="Enter your username:">Enter your username:</td></tr><tr><td><input type="text" name="os1" maxlength="60" value="<? web::put $LostPlayer(username) ?>"></td></tr>
+</table>
+<input type="hidden" name="currency_code" value="EUR">
+<input type="hidden" name="encrypted" value="-----BEGIN PKCS7-----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-----END PKCS7-----
+">
+<input type="image" src="https://www.sandbox.paypal.com/en_US/BE/i/btn/btn_buynowCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+<img alt="" border="0" src="https://www.sandbox.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
+</form>
+
+
+				}
+				web::put "Helloo!"
+				web::config putxmarkup  brace
+		}
+	} 
+}
+web::command paypalComplete {
+	if {![IsAuthenticated]} {
+		page "Game options and items shop and payment" "" {
+	
+			set file [open [file dirname [web::config script]]/paypal_[clock seconds].txt w]
+			puts $file "Start of file\=-=-=-=\nGet Param\n=-=-=-="
+			foreach request [web::param -names] {
+				web::put "$request : [web::param $request]"
+				puts $file "$request : [web::param $request]"
+			}
+			puts $file "=-=-=-=\nForm var(POST)\n=-=-=-="
+			foreach request [web::formvar -names] {
+				puts $file "$request : [web::formvar $request]"
+			}
+			puts $file "=-=-=-=\nEnd:)"
+			close $file
+		}
+	} else  {
+
+			set file [open [file dirname [web::config script]]/paypal_[clock seconds].txt w]
+			puts $file "Start of file\=-=-=-=\nGet Param\n=-=-=-="
+			foreach request [web::param -names] {
+				web::put "$request : [web::param $request]"
+				puts $file "$request : [web::param $request]"
+			}
+			puts $file "=-=-=-=\nForm var(POST)\n=-=-=-="
+			foreach request [web::formvar -names] {
+				puts $file "$request : [web::formvar $request]"
+			}
+			puts $file "=-=-=-=\nEnd:)"
+			close $file
+
+	} 
+}
+
+#Include footer
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+
+

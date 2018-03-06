@@ -1,0 +1,191 @@
+
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+#Calculate the penalty you get when buying skills from other classes
+#TODO.. fix this file:)
+proc calculateSkillXp {class} {
+#return array?
+	switch $class {
+		Mercenary {	return "Survivor 15 Technician 35 Medic 40 Zombie 25 Mercenary 0"	}
+		Technician { return "Medic 25 Survivor 30 Mercenary 35 Zombie 25 Technician 0" }
+		Medic  {return "Technician 15 Survivor 35 Mercenary 40 Medic 0 Zombie 25" }
+		Survivor { return "Mercenary 25	Technician 30 Medic 35 Survivor 0 Zombie 25" }
+		Zombie { return "Mercenary 25 Technician 25 Medic 25 Survivor 25 Zombie 0"}
+	}
+}
+proc showSkills {{extraText ""}} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	
+		web::putx [subst [Lost:lang skill_SpendPoints "$LostPlayer(exp) $LostPlayer(class)"]];
+		
+		if {$extraText != ""} { addLabel error $extraText }
+		set skills [DatabaseQuery "SELECT skillID, class,skill,skilldescription,xp,level,skillrequiredID as sk,(select skill from Skills where SkillID=sk) as skillrequired FROM Skills"]
+		set userSkills [DatabaseQuery "SELECT skillID FROM PlayerSkills where userID='$LostPlayer(userID)'"]
+		array set penaltyXP [calculateSkillXp $LostPlayer(class)]
+		foreach {skillID Class Skill SkillDescription xp level SkillRequired SkillRequiredName} $skills {
+			set xp [expr {$xp*(100+"$penaltyXP($Class)")/100}]
+			if {$SkillRequiredName == ""} { set SkillRequiredName none }
+			switch $Class {
+				Mercenary {	lappend Mercenary $skillID $Skill $SkillDescription $xp $level  $SkillRequired	$SkillRequiredName }
+				Technician { lappend Technician $skillID $Skill $SkillDescription $xp  $level $SkillRequired	$SkillRequiredName }
+				Medic {	lappend Medic $skillID $Skill $SkillDescription $xp  $level $SkillRequired $SkillRequiredName	}
+				Survivor {	lappend Survivor $skillID $Skill $SkillDescription $xp  $level $SkillRequired $SkillRequiredName }
+				Zombie { lappend Zombie $skillID $Skill $SkillDescription $xp  $level $SkillRequired $SkillRequiredName	}
+			}
+		}
+		foreach {class} {Mercenary Technician Medic Survivor Zombie} { PrintAllSkills $class }
+		#html(<? web::put [Lost:lang skill_sureToBuy \$(this).attr("skill")  \$(this).attr("xp")] ?>);
+		web::putx {
+		<div id="skillform"></div>
+		<script>
+			allShowAndHide();
+			$('#showSkills<? web::put $LostPlayer(class) ?>').click();
+			$('.skillbutton').click(function(e) {
+			   e.preventDefault();
+				var thisButton = $(this)
+				$( "#skillform" ).css('textAlign','center').dialog({
+					title: '<? web::put [Lost:lang skill_Buy] ?>',
+					"buttons" : {
+						"<? web::put [Lost:lang skill_Buy] ?>": function() {
+							$(this).dialog({ buttons: { "Ok": function() {
+									//REload the currently selected tab...
+									$('#tabs').tabs("load",$( "#tabs" ).tabs( "option", "selected" ));
+									$(this).dialog("close");
+								} } })
+								loadingAjax('#skillform','GET',thisButton.attr('link'));
+							},
+						"Cancel": function() { $(this).dialog("close"); },
+					},
+				}).html('<p>Are you sure you want to buy the<b> ' + $(this).attr("skill") + ' </b>skill for <b> ' + $(this).attr("xp") +'</b> energy? </p>');
+			
+			});
+			$('.skillbutton').button();
+		</script>
+		}
+}
+
+#Procedure to print everything for each class
+proc PrintAllSkills {class} {
+	#Upvar $class so we get the CLASS name and not the variable class (eg Zombie)
+	upvar $class theClass 
+	upvar userSkills userSkills
+	upvar LostPlayer LostPlayer
+		set lastLevel "0" ; set toClose 0 
+		web::putx {<h3><?web::put [Lost:lang $class]?> <a href="#" id="showSkills<?web::put $class?>">[+]</a></h3><ul id="skills<?web::put $class?>">}
+		foreach {skillID Skill SkillDescription xp level SkillRequired SkillRequiredName} $theClass {
+			set ul ""
+			if {$level > 0} { 
+				if {$lastLevel > $level} {
+					for {set i $level} {$i<$lastLevel} {incr i} { 	append ul "</li></ul>" ; incr toClose -1   }
+				} elseif {$lastLevel != $level} { append ul "<ul>"  ; incr toClose }
+			} elseif {$level == 0} { for {set i 0} {$i<$lastLevel} {incr i} { 	append ul "</li></ul>" ; incr toClose -1   } }
+			if {[lsearch $userSkills $skillID] != -1} {
+				web::put "$ul<li class=\"youHave\"> [subst [Lost:lang skill_YouHave "{{$Skill}} {$SkillDescription}"]]"
+			} else { 
+				web::put "$ul<li class=\"youDont\">[subst [Lost:lang skill_YouDont "{$Skill} {$SkillDescription} $xp $SkillRequiredName"]] [formGetSkill $skillID $SkillRequired $userSkills $Skill $xp]"
+			}
+			set lastLevel $level
+		}
+		for {set i 0} {$i<$toClose} {incr i} {
+			append closeUl "</li></ul>"
+		}
+		if {$toClose == 0} { set closeUl "" }
+		web::put "$closeUl</ul>"
+}
+#Procedure to show the button to buy a skill
+proc formGetSkill {skillID SkillRequired userSkills Skill xp} {
+	upvar LostPlayer LostPlayer
+	if {$LostPlayer(exp) >= $xp} {
+		if {[lsearch $userSkills $SkillRequired] != -1 || $SkillRequired == "0" } { 
+			return "<a href=\"#\" link=\"[newUrl skills.ws3 buySkill skill $skillID]\"  xp=\"$xp\" skillID=\"$skillID\" skill=\"$Skill\" class=\"skillbutton\">[Lost:lang skill_Buy]</a>"
+		}
+	}
+}
+#Handling when user wants a skill
+proc buySkill {} {
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set skillToBuy [web:get skill]
+
+	if {![regexp -- {^[[:digit:]]+$} "$skillToBuy"]} { append errors "Oopsie, not a number.. trying to haxor?" } else {
+		
+		#database queries
+		set skills [DatabaseQuery "SELECT xp,skillrequiredID,class,skill FROM Skills where skillID='$skillToBuy'"]
+		set userSkills [DatabaseQuery "SELECT skillID FROM PlayerSkills where userID='$LostPlayer(userID)'"]
+		
+		#calculate xp for each class & the skill
+		array set penaltyXP [calculateSkillXp $LostPlayer(class)]
+		set xp [expr {[lindex $skills 0]*(100+$penaltyXP([lindex $skills 2]))/100}]
+		set SkillRequired [lindex $skills 1]
+		set skillName [lindex $skills 3]
+		set skillrequiredName [DatabaseQuery "SELECT skill FROM Skills where skillID='$SkillRequired'"]
+		
+		#control for errors
+		if {$skills == 0} { append errors "[Lost:lang skill_NoSuch]<br/>" }
+		if {$LostPlayer(exp) < $xp } { append errors [Lost:lang skill_NotEnoughXp] } else { incr LostPlayer(exp) -$xp }
+		if {[lsearch $userSkills $SkillRequired] == -1 && $SkillRequired != "0" } { append errors [Lost:lang skill_YouNeedOtherSkill [list $skillrequiredName]] }
+		#Control if they don't already have the skill.
+		if {[string match -nocase "*$skillToBuy*" $userSkills]} { append errors [Lost:lang skill_AlreadyHave] }
+	}
+	#Show the page & add everything to the database
+	if {[string length $errors] ==  0} {
+		#Add All combat skills
+		switch -- $skillrequiredName {
+			"Combat tactics" { DatabaseExec "UPDATE PlayersAccuracy SET handtohand=handtohand+15  WHERE userID='$LostPlayer(userID)'" }
+			"Blade Sharpener" { DatabaseExec "UPDATE PlayersAccuracy SET Blade=Blade+15  WHERE userID='$LostPlayer(userID)'" }
+			"Axe handling" { DatabaseExec "UPDATE PlayersAccuracy SET Axe=Axe+15  WHERE userID='$LostPlayer(userID)'" }
+			"Basic firearms training" { DatabaseExec "UPDATE PlayersAccuracy SET Pistol=Pistol+20,Shotgun=Shotgun+20  WHERE userID='$LostPlayer(userID)'" }
+			"Pistol training" { DatabaseExec "UPDATE PlayersAccuracy SET Pistol=Pistol+15  WHERE userID='$LostPlayer(userID)'" }
+			"Shotgun training" { DatabaseExec "UPDATE PlayersAccuracy SET Shotgun=Shotgun+15  WHERE userID='$LostPlayer(userID)'" }
+			"Advanced Pistol Training" { DatabaseExec "UPDATE PlayersAccuracy SET Pistol=Pistol+15  WHERE userID='$LostPlayer(userID)'" }
+			"Advanced Shotgun Training" { DatabaseExec "UPDATE PlayersAccuracy SET Shotgun=Shotgun+15  WHERE userID='$LostPlayer(userID)'" }
+			
+			"Dexterity" { DatabaseExec "UPDATE LostPlayers SET maxenergy=maxenergy+50 WHERE userID='$LostPlayer(userID)'"}
+			"Harsh Survival" { DatabaseExec "UPDATE LostPlayers SET maxhealth=maxhealth+50 WHERE userID='$LostPlayer(userID)'"}
+			
+			"Vigour Mortis" { DatabaseExec "UPDATE ZombieAttacks SET ClawAcc=ClawAcc+10  WHERE userID='$LostPlayer(userID)'" }
+			"Neck Bite" { DatabaseExec "UPDATE ZombieAttacks SET  BiteAcc=BiteAcc+15  WHERE userID='$LostPlayer(userID)'" }
+			"Sharpened teeth" { DatabaseExec "UPDATE ZombieAttacks SET BiteDmg=BiteDmg+1  WHERE userID='$LostPlayer(userID)'" }
+			"Claws Grip" { DatabaseExec "UPDATE ZombieAttacks SET ClawAcc=ClawAcc+15  WHERE userID='$LostPlayer(userID)'" }
+			"Iron Fingers" { DatabaseExec "UPDATE ZombieAttacks SET ClawDmg=ClawDmg+1  WHERE userID='$LostPlayer(userID)'" }
+			"Basic Instinct" { DatabaseExec "UPDATE ZombieAttacks SET ClawDmg=ClawDmg+1,BiteDmg=BiteDmg+1,ClawAcc=ClawAcc+10,BiteAcc=BiteAcc+10    WHERE userID='$LostPlayer(userID)'" }
+
+		}
+		web::putx {
+			var serverObj = {
+				<? simpleObject html "[Lost:lang  skill_YouBought [list $skillName] ]" success [Lost:lang  skill_YouBought [list $skillName]] ?>
+			}
+		}
+		
+
+		set LostPlayer(lastAction) [unixtime]
+		DatabaseExec "INSERT INTO PlayerSkills VALUES('$LostPlayer(userID)','$skillToBuy','$xp')"
+		DatabaseExec "UPDATE LostPlayers SET lastaction='$LostPlayer(lastAction)', exp='$LostPlayer(exp)',maxxp=maxxp+'$xp' WHERE userID='$LostPlayer(userID)'"
+	} else { web::putx { var serverObj  = { <? simpleObject error   "$errors"  html   "$errors" ?> } } }
+}
+#############
+#Dispatching commands
+#############
+web::command default {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		showSkills 
+		SaveSession
+	}
+}
+web::command buySkill {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		buySkill
+		SaveSession
+	}
+}
+
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg

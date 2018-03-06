@@ -1,0 +1,251 @@
+try {	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+proc SetLocalMsg {} {
+	global errors
+	set msg [string trim [web:post message]]
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	if {[string length $msg] == 0} { append errors "You wanted to speak but didn't want to say anything anymore.." }
+	if {[string length $msg] > 250} { append errors "You can only type 250 characters:)" }
+	if {[VerifyEnergy $LostPlayer(energy) 1]} {
+		incr LostPlayer(energy) -1
+	}
+	if {[string length $errors] ==  0} {
+		#Update & write message
+		set time [unixtime]
+		set LostPlayer(lastAction) $time
+		set msg "said: \"$msg\""
+		DatabaseExec "UPDATE LostPlayers SET energy='$LostPlayer(energy)', lastAction='$LostPlayer(lastAction)' WHERE username='$LostPlayer(username)'"
+		DatabaseExec "INSERT INTO LocalMsg (fromUser,inbuilding,town,x,y,msg,msgTime) VALUES('$LostPlayer(username)','$LostPlayer(inbuilding)','$LostPlayer(town)','$LostPlayer(x)','$LostPlayer(y)','$msg','$time')"
+		DisplayMap { addLabel success "[boldSpan "You $msg"]" }
+		GlobalVar::carray set LostPlayer [array get LostPlayer]
+	} else { DisplayMap }
+}
+proc MessagesPage {{extraText ""}} { 
+	global errors
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set hasMobile [DatabaseQuery "SELECT item FROM Items WHERE item='Mobile Phone' and username='$LostPlayer(username)'"]
+	
+	if {$hasMobile == ""} { append errors "You need to have a Mobile Phone to be able to send, recieve and read messages. <br/>" }
+	if {[string match -nocase "*$LostPlayer(status)*" "dead zombie"]} { append errors "You can only send and read messages when you're ALIVE." }
+	if {[string length $errors] ==  0} {
+		page "Inbox - Sending messages" "" {
+			web::putx { 
+			<div class="links"><ul>
+				<li> <a href="{web::put [web::cmdurl default]}" rel="map.ws3">Inbox</a>  | </li><li>  
+				<li> <a href="{web::put [web::cmdurl Sent]}" rel="map.ws3">Sent </a>  | </li><li>  
+				<li> <a href="{web::put [web::cmdurl New]}" rel="map.ws3">New message</a> | </li>
+				<li> <a href="{web::put [web::cmdurl ContactAdmins]}" rel="map.ws3">Contact Admins</a>  </li>
+			</ul></div>
+			}
+		} {
+			uplevel $extraText
+		}
+	} else { 
+		page "Inbox - Sending messages" "" "" {
+			web::putx [addLabel error $errors]
+		}
+	}
+}
+proc ShowInbox {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	MessagesPage {
+		set messages [DatabaseQuery "SELECT msgid,fromUser,msg,msgTime,readMsg FROM Messages where toUser='$LostPlayer(username)' ORDER BY (msgTime+0) DESC"] ; #AND fromUser='SYSTEM'
+		set timenow [unixtime]
+		set totalMessages [expr {[llength $messages]/5}]
+
+		if {$totalMessages == 0} { web::put [boldSpan "You haven't got any messages."] } else {
+			web::putx { <p>You've got a total of {web::put [boldSpan "$totalMessages"]} messages. You have a limit of 30 messages. Please note that all exceeding messages will be deleted.</p>
+			<form method="post" action="{web::put [web::cmdurl DeleteMessages]}">
+			<table class="msg"><tr><th>{web::put [htmlInput selectAll checkbox selectAll id="selectAll"]}</th><th>From</th><th>Summary</th><th>When</th><th>Read</th></tr> }
+			foreach {msgid fromUser msg msgTime readMsg} $messages {
+				web::putx "<tr [expr {$readMsg==0? " style='font-weight:bold;'":""}]>
+				<td>[htmlInput toDelete checkbox $msgid ]</td><td>$fromUser</td><td>[newLink [web::cmdurl ReadMsg msgid $msgid] [string range $msg 0 30]...]</td>
+				<td>[timeDiff [expr {$timenow -$msgTime}]] ago</td><td>[expr {$readMsg==0? "no":"yes"}]</td></tr>"
+			}
+			web::put {</table> <p><input type="submit" name="delete" id="button" value="Delete" /></p> </form>		}
+		}
+	}
+}
+proc Sent {} {
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	MessagesPage {
+		set messages [DatabaseQuery "SELECT msgid,toUser,msg,msgTime,readMsg FROM Messages where fromUser='$LostPlayer(username)' ORDER BY (msgTime+0) DESC"] ; #AND fromUser='SYSTEM'
+		set timenow [unixtime]
+		set totalMessages [expr {[llength $messages]/5}]
+
+		if {$totalMessages == 0} { web::put [boldSpan "You never sent a message."] } else {
+			web::putx { <p>You've got a total of {web::put [boldSpan "$totalMessages"]} sent messages. You don't have any limit for sent messages since the reciever must delete them.</p>
+				<table class="msg"><tr><th>{web::put [htmlInput selectAll checkbox selectAll id="selectAll"]}</th><th>To</th><th>Summary</th><th>When</th><th>Read</th></tr> }
+			foreach {msgid toUser msg msgTime readMsg} $messages {
+				web::putx "<tr [expr {$readMsg==0? " style='font-weight:bold;'":""}]>
+				<td>[htmlInput toDelete checkbox $msgid ]</td><td>$toUser</td><td>[newLink [web::cmdurl ReadMsg msgid $msgid] [string range $msg 0 30]...]</td>
+				<td>[timeDiff [expr {$timenow -$msgTime}]] ago</td><td>[expr {$readMsg==0? "no":"yes"}]</td></tr>"
+			}
+			web::put {</table>}
+		}
+	}
+}
+proc SendMessage {} {
+	set toOther [web:post toOther]
+	set tofriend [web:post tofriend]
+	set message [web:post message]
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set errors ""
+	
+	if {($toOther == "" ^ $tofriend != "---") || $message == ""}  { append errors "You need to specify to whom to send and also the message you want to send! <br/>" }
+	if {$toOther != "" || $tofriend == "---"} { set player $toOther } else { set player $tofriend }
+	if {$player == $LostPlayer(username)} { append errors "It's not very usefull to message yourself, is it?<br/>" }
+	if {[string length $message] > 500 || [string length $message] < 30} { append errors "Your message must be between 30 and 500 characters long!<br/>" }
+
+	set username [DatabaseQuery "SELECT username FROM LostPlayers where username='$player'"]
+	if {$username == ""} { append errors "The player you want to send a message doesn't exist!<br/>" }
+	
+	if {[string length $errors] ==  0} {
+		set time [unixtime]
+		DatabaseExec "INSERT INTO Messages (fromUser,toUser,msg,msgTime,readMsg) VALUES('$LostPlayer(username)','$player','$message','$time',0)"
+		DatabaseExec "UPDATE LostPlayers SET lastAction='$time',energy=energy-1 where username='$LostPlayer(username)'"
+		
+		MessagesPage { 	addLabel success "You've sent a message to [boldSpan $player]."	}
+	} else { MessagesPage {	addLabel error $errors ; Compose } }
+}
+proc ReadMsg {} {
+	set msgid [web:get msgid] 
+	array set LostPlayer [GlobalVar::carray get LostPlayer]
+	set errors ""
+	
+	array set myMessage [DatabaseFetchArray "Select * FROM Messages where msgid='$msgid' and toUser='$LostPlayer(username)'"]
+	if {$myMessage(toUser) == ""} { append errors "Either this message isn't for you or it doesn't exist.<br/>" }
+
+	if {[string length $errors] ==  0} {
+		set time [unixtime]
+		DatabaseExec "UPDATE Messages  SET readMsg=1 WHERE msgid='$msgid' and readMsg=0"
+		MessagesPage { 
+			web::putx "<table class='msg'>
+			<tr> <th colspan='2' style='text-align:center;color:lightgreen;'>Recieved Message</th><tr>
+			<tr> <td>From:</td><td>$myMessage(fromUser)</td> <tr>
+			<tr> <td>Sent:</td><td>[timeDiff [expr {$time -$myMessage(msgTime)}]] </td> <tr>
+			<tr> <td colspan='2'>$myMessage(msg)</td><tr>
+			<tr> <td colspan='2' style='text-align:center;'>"
+			web::putx {
+				<form method="post" style="display:inline;" action="{web::put [web::cmdurl New toOther $myMessage(fromUser) message "=-=-=-=-=-=-=-=-=-=-=-=-= $myMessage(msg)" ]}">
+				<input type="submit" name="reply"  value="Reply" />	</form>
+				<form method="post" style="display:inline;" action="{web::put [web::cmdurl DeleteMessages]}">
+				{web::put [htmlInput toDelete hidden $myMessage(msgid)]}
+				<input type="submit" name="delete"  value="Delete" /> </form>
+				<form method="post" style="display:inline;" action="{web::put [web::cmdurl ReportAbuse]}">
+				{web::put [htmlInput toDelete hidden $myMessage(msgid)]}
+				<input type="submit" name="reportAbuse"  value="Report" /> </form>
+			}
+			web::put "
+			</td><tr>
+			</table>"
+		}
+	} else { MessagesPage {	addLabel error $errors  } }
+}
+#Forms 
+proc Compose {} {
+	web::putx {
+	<form method="post" action="{web::put [web::cmdurl SendMessage]}">
+	<fieldset>
+	<legend>Send a message using your mobile.</legend>
+	<p>
+	<label for="toOther">To player:</label>
+	<input type="text" name="toOther" id="toOther" value="{getFormVar toOther}{web::put [web:get toOther]}" /> or to a friend
+	<select id="tofriend" name="tofriend" >
+		<option value="---">---</option>
+	</select>
+	</p><p>
+	<label for="message">Message:</label>
+	<textarea style="width:500px;height:150px;" name="message" id="message" maxlength="500">{getFormVar message}{web::put [web:get message]}</textarea>
+	</p>
+	<input type="submit" name="sendMessage" id="button" value="Send Message"  />
+	</fieldset>
+	</form>
+	}
+}
+#############
+#Dispatching commands
+#############
+web::command default {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {  
+		ShowInbox 
+		SaveSession
+	}
+}
+web::command New {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		array set LostPlayer [GlobalVar::carray get LostPlayer]
+		MessagesPage Compose
+		SaveSession
+	}
+}
+web::command Sent {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		Sent
+		SaveSession
+	}
+}
+
+web::command SendMessage {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		SendMessage 
+		SaveSession
+	}
+}
+
+web::command ReadMsg {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		ReadMsg 
+		SaveSession
+	}
+}
+
+web::command DeleteMessages {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		#DeleteMessages
+		set msgIds [web:post toDelete]
+		
+		if {$msgIds != ""} {
+			array set LostPlayer [GlobalVar::carray get LostPlayer]
+			foreach msgid $msgIds {
+				incr i
+				#The order is really important
+				append values "[expr {$i>1?"OR":""}] msgid='$msgid'"
+			}
+			DatabaseExec "DELETE FROM Messages WHERE ($values) AND toUser='$LostPlayer(username)'"
+			MessagesPage { addLabel success "Message(s) deleted successfully."}
+		} else { MessagesPage {	addLabel error "No messages selected or no such message."  }  }
+		SaveSession
+	}
+}
+
+web::command SetLocalMsg {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {
+		SetLocalMsg
+		SaveSession
+	} 
+}
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+	 
+} on error {bigError} { web::put "Some errors occured: $bigError"}
+

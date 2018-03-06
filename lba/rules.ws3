@@ -1,0 +1,64 @@
+try {	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+
+#############
+#Dispatching commands
+#############
+web::command default {
+	IsAuthenticated
+	page "Game Rules - Terms of Conduct - Privacy Policy"  {
+		web::put {
+			<p style="color:red">By using this site you agree to the following rules.</p>
+			<h3>General Rules</h3>
+			<ol>
+			<li>This game is PURE FICTION so the makers and/or this Game website may never be held responsible for
+			any mental or physical damages it may have caused to anyone. You are sole responsible for the wel beeing of yourself and the game.
+			Being a FREE game you have to accept everything is done within.</li>
+			<li>Your overall language usage and username choice must not be of any distriminating form including but
+			not limited to ethnic background, religion, culture or any other difference. Please don't swear and use a normal language.</li>
+			<li>If you buy something from the shop or donate to the game you  will NEVER get a REFUND. 
+				You agree that in case that you ask Paypal or your bank to give you back your money you will be banned and you will be charged a fee of €100.</li>
+			<li>These rules may always change, without notice, you are required to recheck them every time you login.
+				If you do not agree with the new rules, stop using this site. 
+				If you don't agree with them now go to google and search for another game.</li>
+			<li>You may NOT nag about becoming a Moderator (Bureaucrat, Counciler, Minister Or Dictator which is reserved for a maximum of 2-3 players) 
+				Asking about becoming a Moderator may get you a ban.</li>
+			<li>You may NOT use multiple accounts to gain unfair advantage over other users. No multiple registrations per IP.
+			No multiple logins for the same user. Only ONE account is allowed per person.
+			You are however allowed to have different accounts on different maps that are NEVER in the same place or help eachother. 
+			You agree in getting banned or a reset if found guilty.
+			</li>
+			<li>School, University, LAN ip's can be put as an exception if you contact the Admin with the required proof.
+			Ask a teacher/professor to take 5 minutes and mail us with the necessary proof.</li>			
+			</ol>
+			<h3>Game Testing and Exploiting</h3>
+			<p>	While this game is in a BETA phase(please note that this will also apply to when the game is complete) 
+			you may try to find bugs in the game and test it but you MUST respect the following rules:</p>
+			<ol>
+			<li>You MUST always report a BUG no matter how minor it is. Please note that it because of a bug/exploit and if someone gained "illegal" powers. 
+				The whole game could be reset so no one would appreciate if that could have been stopped.</li>
+			<li>You may NOT use any BOTS/AUTOMATISATION for detecting flaws, all bots will be banned. This excludes future API. </li>
+			<li>Not reporting a bug or exploit will be banned when catched. 
+				Even if you used it only one time to become better in the game.  </li>
+			</ol>
+
+			<h3>Privacy Policy</h3>
+			<p>Information you provide will not be given to Third Parties unless it's required by the 
+			Government or our Hosting because you inflicted some laws or engaged in illegal activities.</p>
+			<p>We only store information needed for the well beeing of the game.</p>
+		}
+	}
+}
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+	 
+} on error {bigError} { web::put "Some errors occured: $bigError"}
+
+
+
+

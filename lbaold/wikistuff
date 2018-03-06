@@ -1,0 +1,49 @@
+self-made wiki in WS3
+
+Login with Game Username (or Another Username)
+Using metakit database(file/textbased so all content is easier to view:)
+
+Page creation & editing: Everyone logged in.
+Whom may edit the page:
+	1	Everyone (default)
+	2	Users
+	3	Owner (only creator of the page)
+	4	Moderators (level 4+) this may only be set by moderators
+
+
+Save  3 to 7 versions back in time!
+Review	Date	Modified by	Line compare	Word compare	Annotated	WikiText	Revert to
+
+Work against database locks:
+method 1: 2 databases. 1 database for reading and 1 database for writing, when done.. write the contents to the other one
+method 2: make a db for every 30 different pages
+method 3: make a db for every page
+method 4: everything in 1 db with a timeout..
+
+#[Database Stuff]
+Use 2 different tables.. one for the info and another for every page modification, save pages in database so we can revert state!
+#PageInfo 
+WikiDB eval {CREATE TABLE PageInfo(PageId INTEGER PRIMARY KEY autoincrement, PageName TEXT, PageType INT DEFAULT 0, Creator TEXT, CreationTime INT DEFAULT 0, EditRights INT DEFAULT 1, EditorsList TEXT)}
+#PageData
+WikiDB eval {CREATE TABLE PageData(PageModification INTEGER, PageName TEXT, PageContent BLOB, LastModification INT DEFAULT 0, LastAuthor TEXT, LastIP TEXT, PRIMARY KEY (PageModification, LastAuthor))}
+#Usernames
+WikiDB eval {CREATE TABLE Usernames(username TEXT PRIMARY KEY, PageCreations INT DEFAULT 0, PagesEdited INT DEFAULT 0)}
+
+Simple codes + closing tags!
+[url link=""]text[/link]
+[ul][ol] 
+[table] [tr] [td]table data[/td] [/tr] [/table]
+
+[b]bolded text[/b] 	<b>bolded text</b> or <span style="font-weight: bold;">bolded text</span> 	bolded text
+[i]italicized text[/i] 	<i>italicized text</i> or <span style="font-style: italic;">italicized text</span> 	italicized text
+[u]underlined text[/u] 	<u>underlined text</u> or <span style="text-decoration: underline;">underlined text</span> 	underlined text
+[s]strikethrough text[/s] 	<s>strikethrough text</s> or <span style="text-decoration: line-through;">strikethrough text</span> 	strikethrough text
+[url]http://example.org[/url] 	<a href="http://example.org">http://example.org</a> 	http://example.org
+[img]http://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Go-home.svg/100px-Go-home.svg.png[/img] 
+[quote]quoted text[/quote] 	<blockquote><p>quoted text</p></blockquote>
+[code]monospaced text[/code] 	<pre>monospaced text</pre> 	monospaced text
+[size=15]Large Text[/size]	<span style="font-size:15px">Large Text</span> 
+[color=red]Red Text[/color]	<span style="color:#FF0000;">Red Text</span> 	
+[p]lala[/p] <p>lala</p>
+[div]lala[/div] <div>lala</div>
+

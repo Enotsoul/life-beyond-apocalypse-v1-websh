@@ -1,0 +1,5 @@
+
+#set the text first
+regsub -all {[\n ]+} $text ";" nonewLines
+
+regsub -all {[\r\t]+} $nonewLines "" output

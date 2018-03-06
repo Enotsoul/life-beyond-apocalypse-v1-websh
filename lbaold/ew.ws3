@@ -1,0 +1,21 @@
+proc web:get {var} {
+	return  [web::param $var]
+}
+proc web:post {var} {
+	return  [web::formvar $var]
+}
+web::command getMap {
+	web::put "mata"
+	set ajax [web:get ajax]
+	if {$ajax == "true"} {
+		web::put [subst -nocommands {[{"current_map":"WWLLLLLLWWWWLLLPLLWWWWLLWWLLWWWWLWWWWLWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"]}]
+	}
+		web::put [subst -nocommands {[{"current_map":"WWLLLLLLWWWWLLLPLLWWWWLLWWLLWWWWLWWWWLWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"]}]
+
+}
+web::command default {
+	web::put "aha"
+}
+
+#use the footer instead, if errors.. use the dispatch from here
+web::dispatch

@@ -1,0 +1,422 @@
+
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+
+#############
+#Form Functions
+#############
+
+#new login form is taken from 
+proc loginForm {} {
+	web::putx {
+	<form method="post" action="<?web::put [web::cmdurl checkLogin]?>" id="login-form">
+	<fieldset>
+		<label for="username"><? web::put [Lost:lang username] ?>:</label>
+		<input type="text" name="username" id="username" value="<?getFormVar username?>" class="text ui-widget-content ui-corner-all" />
+		<label for="password"><? web::put [Lost:lang password] ?>:</label>
+		<input type="password" name="password" id="password" value="" class="text ui-widget-content ui-corner-all" />
+		<input type="submit" name="register" id="loginButton" value="<? web::put [Lost:lang login] ?>"  />
+	</fieldset>
+	</form>
+	}
+}
+
+
+proc lostPassword {} {
+	set submit [web:post lostpassword]
+	set username [web:post username]
+	set email [web:post email]
+	set errors ""
+		
+	if {[string match Submit $submit] && $username != "" && $email != ""} {
+		array set player [DatabaseFetchArray "select * from LostPlayers where username='$username' and email='$email'"]
+		if {$player(username) == ""} { append errors [Lost:lang error_useremail]  } else {
+			if {[expr {([unixtime]-$player(lastAction))/3600}]<=2} { 
+				append errors [Lost:lang error_requestPasswordTime]  
+			}
+		}
+		if {[string length $errors] ==  0} {
+			set ip [web::request REMOTE_ADDR]
+			set password [generateCode 13]
+			set timeNow [unixtime]
+			DatabaseExec "UPDATE LostPlayers SET password='$password',lastAction='$timeNow' WHERE username='$username'"
+			
+			#@TODO add email text to translation?
+			set mailmessage "Hello there <u>$username</u><br/><br/>
+			This email has been sent because someone requested a Lost Password at <b>Life Beyond Apocalypse</b> http://lifebeyondapocalypse.net<br/><br/>
+			A new password has been generated for you. Please log in and <b>change it</b> so you'll remember it from now on.<br/>
+			Request ip: <b>$ip</b><br/>
+			New Password: <b>$password</b><br/><br/>
+					
+			=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=<br/>
+			BE CAREFULL! NEVER give your password to ANYONE. We at LifeBeyondApocalypse.net DO NOT NEED your password.<br/>
+			Some people claim they will give you free items or that they have a program that helps you \"gain experience\" 
+			or that it can exploit the game. Don't accept any program as it will steal your password.<br/><br/>
+			If you recieved this e-mail it also means that you agreed to our Game Terms and Rules.
+			<br/><br/>
+			The LifeBeyondApocalypse team,<br/>
+			www.lifebeyondapocalypse.net (shorthand  http://lba.im/)"
+			send_mail $email "Password request at Life Beyond Apocalypse" $mailmessage
+			addLabel success [Lost:lang passwordReset_checkEmail]
+		} else { addLabel error $errors }
+	}
+
+
+	web::putx {
+	<form method="post" action="<?web::put [web::cmdurl lostPassword]?>" class="reg">
+	<? web::put [colorSpan [Lost:lang error_requireAllFields] red]?>
+	<fieldset>
+	<legend><? web::put [Lost:lang lost_password] ?></legend>
+	<label for="username"><? web::put [Lost:lang username] ?>:</label>
+	<input type="text" name="username" id="username" value="<?getFormVar username?>" />
+	<label for="email"><? web::put  [Lost:lang email] ?>:</label>
+	<input type="text" name="email" id="email" value="<? getFormVar email ?>" />
+	<br />
+	<label for="humanTest"><? web::put  [Lost:lang enterText] ?>: <img src="<? web::put [web::cmdurl Captcha]?>" /> </label>
+	<input type="text" name="humanTest" id="humanTest" value="" size="7" maxlength="10" />
+	<input type="submit" name="lostpassword" id="button" value="Submit"  />
+	</fieldset>
+	</form>
+	}
+ 	
+}
+proc regForm {} {
+	return {
+		<div id="errors">
+			<h2>Please fix these first</h2>
+		</div>
+	<form method="post" action="<?web::put [web::cmdurl proccessRegistration]?>"  id="reg-form">
+	<?web::put [colorSpan [Lost:lang error_requireAllFields] red]?>
+	<fieldset>
+		<div id="register-tabs">
+		<ul>
+			<li><a href="#tabs-1">Step 1</a></li>
+			<li><a href="#tabs-2">Step 2</a></li>
+		</ul>
+		<div id="tabs-1">
+		<p>
+		<label for="username"><?web::put [Lost:lang username]?></label>
+		<input type="text" name="username" id="username"  required="required" minlength="3" value="<?getFormVar username?>" value="" class="text ui-widget-content ui-corner-all" /></p><p>
+		<label for="password"><?web::put [Lost:lang password]?>:</label>
+		<input type="password" required="required" minlength="6" name="password" id="password" value="" class="text ui-widget-content ui-corner-all" /></p><p>
+		<label for="rpassword"><?web::put [Lost:lang r_password]?>:</label>
+		<input type="password" name="rpassword" id="rpassword" required="required" minlength="6" data-equals="password" value="" class="text ui-widget-content ui-corner-all" /></p><p>
+		<label for="email"><?web::put [Lost:lang email]?>:</label>
+		<input type="text" required="required" minlength="5" name="email" id="email"  value="<?getFormVar email?>" class="text ui-widget-content ui-corner-all" /></p><p>
+		<label for="remail"><?web::put [Lost:lang r_email]?>:</label>
+		<input type="text" required="required" minlength="5" name="remail" id="remail"  data-equals="email" value="<?getFormVar remail?>" class="text ui-widget-content ui-corner-all" /></p><p>
+		<label for="class"><?web::put [Lost:lang class]?>:</label>
+		 <select name="class" required="required" minlength="6" class="ui-corner-all ui-widget-content text" >
+			  <option value="Zombie"><?web::put [Lost:lang Zombie]?></option>
+			  <option <? expr {[web::formvar class]=="Mercenary"?[web::put {selected="selected"}]:0}?> value="Mercenary"><?web::put [Lost:lang Mercenary]?></option>
+			  <option  <? expr {[web::formvar class]=="Survivor"?[web::put {selected="selected"}]:0}?>  value="Survivor"><?web::put [Lost:lang Survivor]?></option>
+			  <option  <? expr {[web::formvar class]=="Technician"?[web::put {selected="selected"}]:0}?> value="Technician"><?web::put [Lost:lang Technician]?></option>
+			  <option  <? expr {[web::formvar class]=="Medic"?[web::put {selected="selected"}]:0}?> value="Medic"><?web::put [Lost:lang Medic]?></option>
+		</select><br/></p>
+		<a href="#" onclick="regToNextStep()">Go to step 2</a>
+		</div>
+		<div id="tabs-2">
+		<label for="iAgree"><?web::put [Lost:lang iAgree]?>:</label>
+		<input type="checkbox" name="iAgree" id="iAgree" value="iAgree"  required="required" /></p><p>
+		<label for="humanTest"><?web::put [Lost:lang enterText]?>: <img src="<?web::put [web::cmdurl Captcha]?>" /> </label>
+		<input type="text" name="humanTest" id="humanTest" value=""  required="required" class="text ui-widget-content ui-corner-all" /></p>
+		<input type="submit" name="register" id="registerButton" class="menuLink" value="Register"  />
+		</div>
+		</div>
+	</fieldset>
+	</form>
+	}
+}
+proc ActivateUsername {} {
+	set errors ""
+	set username [web::param username]
+
+	set activationCode [web::param activationCode]
+	array set player [list username "" activationCode "" activated 0]
+	array set player [DatabaseFetchArray "SELECT username,activationCode,activated FROM LostPlayers where username='$username' and activationCode='$activationCode'"]
+	if {$player(username) == ""} { append errors [Lost:lang error_noUserOrCode]<br/> }
+	if {$activationCode != $player(activationCode)} { append errors [Lost:lang error_wrongActivation]<br/> }
+	if {$player(activated) == 1} { append errors [Lost:lang error_alreadyActivated] }
+	
+	if {[string length $errors] ==  0} {
+		DatabaseExec "UPDATE LostPlayers set activated=1 where username='$username'"
+		page [Lost:lang userActivated]  {
+			web::put "<a href=\"[web::cmdurl loginForm]\"  class=\"menuLink\">[Lost:lang login]</a> [Lost:lang startPlaying]"
+		} {
+			bubble('success','<? upvar username username; web::put [::xhtml::removequotes  [Lost:lang yourUserActivated $username]] ?>',7000)
+		}
+	} else {
+		page [Lost:lang failedActivation]  {
+			addLabel error $errors
+		} {
+			bubble('error','<? upvar errors errors; web::put [::xhtml::removequotes  $errors] ?>',7000)
+		}
+	}
+}
+#############
+#Dispatching commands
+############
+web::command checkLogin {
+	# Initialize a fresh state.
+	InitSession
+	set username [web:post username]
+	set password [web:post password]
+	#global errors
+	set errors ""
+	
+	if {$username == "" || $password == ""} {  append errors [Lost:lang fillAllFields] } else {
+		array set player [list username "" password "" level "" activated 0 userID 0]
+		array set player [DatabaseFetchArray "SELECT `userID`,username,password,level,activated FROM LostPlayers WHERE username='$username'"]
+		if {$player(username) == ""} {	append errors "[subst [Lost:lang doesntExist $username]]<br/>"	}	
+		if {![string match $player(password) $password] ^ [string match $player(password) [::md5::md5 -hex $password]]} { append errors "[Lost:lang wrongPassword]<br/>" } 
+		if {$player(level) == 0} {append errors [Lost:lang banned]<br/> }
+		if {$player(activated) == 0} { append errors  [Lost:lang activateToLogin] }
+	}
+	#TODO Verify IP's and time from last login and either don't allow or forbid some things in game
+	if {[string length $errors] ==  0} {
+		set logintime [unixtime]
+		set ip [web::request REMOTE_ADDR]
+		set loginInfo [DatabaseQuery "select * FROM PlayersAdministration WHERE userID='$player(userID)' and loginIP='$ip'"]
+		#If the user logged in from the same ip just update the last login time... otherwise do nothing
+		if {$loginInfo == ""} {
+			DatabaseExec "INSERT INTO PlayersAdministration  VALUES ('$player(userID)','$logintime','$ip')"
+		} else { DatabaseExec "UPDATE PlayersAdministration set loginTime='$logintime' where userID='$player(userID)' and loginIP='$ip'" }
+		DatabaseExec "UPDATE LostPlayers set lastaction='$logintime' WHERE username='$username'"
+		Session::cset username $username
+		LifeBeyond::cset username $username
+		#redirection.. best way.. also putting the session id (never know when we'll use it)
+		set encrypted [web::encryptd "sid [web::param sid]"]
+		
+		#Redirection
+		Redirect ./map.ws3?$encrypted
+	
+		#web::putx {<meta http-equiv="refresh" content="0;url=./map.ws3?{web::putx $encrypted}">}
+	} else {	
+		#ALWAYS USE ::xhtml::removequotes TO RESOLVE THE and \' problems!!
+		#if using javascript, enclose things in '' :)
+		indexPage {
+			//simulate click
+			$( "#login-user" ).click();
+			var errors = '<? global errors; web::put [::xhtml::removequotes $errors] ?>';
+			bubble('error',errors)
+			
+		}
+	}
+	SaveSession
+}
+
+web::command proccessRegistration {
+	# Initialize a fresh state.
+	InitSession
+	set username [web:post username]
+	set password [web:post password]
+	set rpassword [web:post rpassword]
+	set email [web:post email]
+	set remail [web:post remail]
+	set class [web:post class]
+	set iAgree [web:post iAgree]
+	set humanTest [web:post humanTest]
+	set humanTestAnswer [Session::cget humanTestAnswer]
+	
+	set ip [web::request REMOTE_ADDR]
+	set errors ""
+	if {$username == "" || $password == "" || $rpassword == "" || $email == "" || $remail == ""  || $class == ""} {
+		lappend errors [Lost:lang fillAllFields]
+	} else {
+		#Continue this..
+		##set ipcount DatabaseExec "select count(created) from LostPlayers where regip='84.197.245.111' and created between $yesterday and $tomorrow 
+		set totalfromip [DatabaseQuery "SELECT count(regip) from LostPlayers WHERE regip='$ip'"]
+		if {$totalfromip >= 2} { lappend errors [Lost:lang max2ip]<br/> } 
+		set exists [DatabaseQuery "SELECT username FROM LostPlayers WHERE username='$username'"]
+		if {[string tolower $exists] == [string tolower $username]} {	lappend errors [Lost:lang alreadyRegistered $username]<br/>	}
+		set ulength 6
+		if {[string length $username] < $ulength && [string length $password] < $ulength} { 
+			lappend errors "[Lost:lang userAtLeastLong $ulength]<br/>"
+		}
+		if {[string match -nocase "*$username*" "admin SYSTEM barricades building generator"]} { lappend errors [Lost:lang forbiddenUser]<br/> }
+		if {[string match $password $rpassword] != 1} { lappend errors [Lost:lang passwordsNotMatch]<br/> }
+		if {[regexp {^[A-Za-z0-9._]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$} $email] != 1} { 
+			lappend errors [Lost:lang invalidMail]<br/>
+		}
+		if {[string match -nocase $email $remail] !=1} { lappend errors [Lost:lang emailsNotMatch]<br/> }
+		set existsmail [DatabaseQuery "SELECT email FROM LostPlayers WHERE email='$email'"]
+		if {[string tolower $email] == [string tolower $existsmail]} { lappend errors [Lost:lang alreadyRegMail]<br/> }
+		if {$iAgree != "iAgree"} { lappend errors [Lost:lang agreeText]<br/> }
+		if {![string match -nocase $humanTestAnswer $humanTest]} { lappend errors [Lost:lang humanTestWrong]<br/> }
+	}
+		if {[string length $errors] ==  0} {
+			set created [unixtime]
+			#TODO Let the user select a town..?
+			set townID [lindex [DatabaseQuery "select id from Towns"] 0]
+			set max [DatabaseQuery "select max(x) from Buildings where townID='$townID'"]
+			set randy [rnd 1 $max]
+			set randx  [rnd 1 $max]
+			set activationCode [generateCode 13]		
+			set md5Password [::md5::md5 -hex $password]
+			
+			if {$class == "Zombie"} { set status Zombie } else { set status Alive }
+			#LEAVE this here, needs encumbrance to be set..
+			DatabaseExec "INSERT INTO LostPlayers (username,password,email,class,created,regip,x,y,townID,status,activationCode,language) 
+			VALUES ('$username','$md5Password','$email','$class','$created','$ip','$randx','$randy','$townID','$status','$activationCode','en')"
+			set userID [getLastId]
+			
+			DatabaseExec "INSERT INTO PlayersAccuracy VALUES('$userID',55,40,40,50)"
+			DatabaseExec "INSERT INTO ZombieAttacks VALUES('$userID',10,0,30,3,6,50,2,4)"
+			#Add the things for each starting class
+			switch $class {
+				Mercenary {
+					DatabaseExec "INSERT INTO Items (userID,itemID,subitem,break,share) VALUES ('$userID',(SELECT itemID from ItemsDesc where name='Flak Jacket'),0,0,0)"
+					DatabaseExec "INSERT INTO Items (userID,itemID,subitem,break,share) VALUES ('$userID',(SELECT itemID from ItemsDesc where name='Knife'),0,5,0)"
+					set encumbrance [DatabaseQuery "SELECT sum(encumbrance) from ItemsDesc where name='Knife' or name='Flak Jacket'"]
+				}
+				Technician {
+					DatabaseExec "INSERT INTO Items (userID,itemID,subitem,break,share) VALUES ('$userID',(SELECT itemID from ItemsDesc where name='ToolBox'),0,5,0)"
+					DatabaseExec "INSERT INTO Items (userID,itemID,subitem,break,share) VALUES ('$userID',(SELECT itemID from ItemsDesc where name='Crowbar'),0,5,0)"
+					set encumbrance [DatabaseQuery "SELECT sum(encumbrance) from ItemsDesc where name='ToolBox' or name='Crowbar'"]
+					#web::putx $encumbrance
+				}
+				Survivor {
+					DatabaseExec "INSERT INTO Items (userID,itemID,subitem,break,share) VALUES ('$userID',(SELECT itemID from ItemsDesc where name='Baseball Bat'),0,5,0)"
+					DatabaseExec "INSERT INTO Items (userID,itemID,subitem,break,share) VALUES ('$userID',(SELECT itemID from ItemsDesc where name='Radio'),0,0,0)"
+					set encumbrance [DatabaseQuery "SELECT sum(encumbrance) from ItemsDesc where name='Baseball Bat' or name='Radio'"]
+				}
+				Medic {
+					DatabaseExec "INSERT INTO Items (userID,itemID,subitem,break,share) VALUES ('$userID',(SELECT itemID from ItemsDesc where name='First Aid Kit'),0,0,0)"
+					DatabaseExec "INSERT INTO Items (userID,itemID,subitem,break,share) VALUES ('$userID',(SELECT itemID from ItemsDesc where name='First Aid Kit'),0,0,0)"
+					DatabaseExec "INSERT INTO Items (userID,itemID,subitem,break,share) VALUES ('$userID',(SELECT itemID from ItemsDesc where name='First Aid Kit'),0,0,0)"
+					set encumbrance [DatabaseQuery "SELECT sum(encumbrance) from ItemsDesc where name='First Aid Kit' or name='First Aid Kit'"]
+				}
+				Zombie { 
+					DatabaseExec "INSERT INTO PlayerSkills VALUES ('$userID',(SELECT skillID from Skills where skill='Vigour Mortis'),0)" 
+					DatabaseExec "UPDATE ZombieAttacks SET ClawACC=ClawACC+10 where userID='$userID'"
+					set encumbrance 0
+				}
+			}
+			DatabaseExec "UPDATE LostPlayers SET encumbrance='$encumbrance' WHERE userID='$userID'" 
+		indexPage {			
+				bubble('notice','<? web::put [::xhtml::removequotes [Lost:lang activationEmail]] ?>',7000)
+				bubble('success','<? global username; web::put [::xhtml::removequotes [subst [Lost:lang regSuccsesful $username]]] ?>',7000)
+		}
+		set activationLink [fullUrl ActivateUsername username $username activationCode $activationCode]
+		set mailmessage "Hello there <u>$username</u><br/><br/>
+		Welcome to <b>Life Beyond Apocalypse</b>. You can start playing in a few seconds after you have activated your account.<br/><br/>
+		If you did <b>NOT</b> register to <b>Life Beyond Apocalypse</b> then please ignore this e-mail and don't click the link below.<br/><br/>
+		Please click the link below to activate your account. If you can't click it, copy it to your browser. 
+		It's recommended to activate it <b>within</b> <u>24 hours</u> because it will be considered a spam account and get deleted otherwise.<br/><br/>
+		<a href=\"$activationLink\">$activationLink</a><br/><br/>
+		It's also very recommended that you save this e-mail or write down the following information.<br/>
+		Username: <b>$username</b><br/>
+		Password: <b>$password</b><br/>
+		
+		=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=<br/>
+		BE CAREFULL! NEVER give your password to ANYONE. We at LifeBeyondApocalypse.net DO NOT NEED your password.<br/>
+		Some people claim they will give you free items or that they have a program that helps you \"gain experience\" 
+		or that it can exploit the game. Don't accept any program as it will steal your password.<br/><br/>
+		If you recieved this e-mail it also means that you agreed to our Game Terms and Rules.
+		<br/><br/>
+		The LifeBeyondApocalypse team,<br/>
+		www.LifeBeyondApocalypse.net (shorthand at http://lba.im/)"
+		send_mail $email "Life Beyond Apocalypse registration" $mailmessage
+	} else {
+		indexPage {
+			
+		$( "#register-user" ).click(function() {
+			if (!$( "#auth-dialog" ).length) {
+				$('#container').append("<div id='auth-dialog'></div>");
+			}
+			$( "#auth-dialog" ).dialog({
+				autoOpen: false,
+				modal: true,
+				title: "Register to Life Beyond Apocalypse",
+			});
+			$( "#auth-dialog" ).html('<? web::putx [::xhtml::removeNewLine [regForm]] ?>');
+			$('#registerButton').button();
+			$( "#register-tabs" ).tabs();
+			$( "#auth-dialog" ).dialog("open");
+			
+		});
+			<?
+				global errors
+				foreach error [::xhtml::removequotes $errors] {
+					web::put "	bubble('error','$error',10000);	"
+				}
+				
+			?>
+		
+			//simulate click
+			$( "#register-user" ).click();
+		}
+	}
+	#make session persistent (send form values)
+	SaveSession
+}
+web::command lostPassword {
+	InitSession
+	page [Lost:lang lost_password] {
+		lostPassword
+	}
+}
+web::command register {
+	# Initialize a fresh state.
+	InitSession
+	indexPage {
+
+		$( "#register-user" ).click(function() {
+			if (!$( "#auth-dialog" ).length) {
+				$('#container').append("<div id='auth-dialog'></div>");
+			}
+			$( "#auth-dialog" ).dialog({
+				autoOpen: false,
+				modal: true,
+				title: "Register to Life Beyond Apocalypse",
+			});
+			$( "#auth-dialog" ).html('<? web::putx [::xhtml::removeNewLine [regForm]] ?>');
+			$('#registerButton').button();
+			$( "#register-tabs" ).tabs();
+			$( "#auth-dialog" ).dialog("open");
+			
+		});
+
+		$( "#register-user" ).click();
+	}
+}		
+web::command ActivateUsername {
+	InitSession
+	ActivateUsername
+}
+web::command logout {
+	InitSession
+	Session::invalidate
+	LifeBeyond::invalidate
+	Session::new
+	#Always use ::xhtml::removequotes
+	indexPage {
+		bubble('success','<?  web::put [::xhtml::removequotes [Lost:lang logoutOk]] ?>')
+	}
+}
+web::command expired {
+	InitSession
+	indexPage {
+		bubble('success','<?  web::put [::xhtml::removequotes [Lost:lang expiredSession]] ?>')
+		$( "#login-user" ).click();
+	}
+}
+web::command RestrictedAccess {
+	IsAuthenticated
+	indexPage {
+		bubble('success','<?  web::put [::xhtml::removequotes [Lost:lang restrictedAccess]] ?>')
+		$( "#login-user" ).click();
+	}
+}
+web::command default {
+	# Initialize a fresh state.
+	InitSession
+	indexPage {
+		$( "#login-user" ).click();
+	}
+}
+
+#use the footer instead, if errors.. use the dispatch from here
+#web::dispatch
+
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+

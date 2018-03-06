@@ -1,0 +1,65 @@
+try {	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+
+#############
+#Dispatching commands
+#############
+web::command default {
+	IsAuthenticated
+	set player [web:get player]
+	set offset [web:get offset]
+	set perPage [web:get perPage]
+	
+	if {$player == ""} { set player none }
+	if {$offset == "" || ![string is digit $offset]} { set offset 0 }
+	if {$perPage == "" || ![string is digit $perPage]} { set perPage 10 }
+	
+	set allPlayers [DatabaseQuery "SELECT username,level,lastAction,class,exp,status from LostPlayers ORDER BY username ASC LIMIT $offset, $perPage"]
+	set totalPlayers [DatabaseQuery "SELECT count(username) from LostPlayers"]
+	set playersList {<div style="padding:0;margin:0;"><table class="msg"><tr><th>Username</th><th>Level</th><th>Last Active</th><th>Class </th><th>Exp </th> <th> Status</th></tr>}
+
+	foreach {username level lastaction class exp status } $allPlayers {
+		#TODO.. put links on USERNAME to show info about username & edit username;;)
+		#also, link to regIp to search by ip..
+		append playersList "<tr><td>[newLink [newUrl profile.ws3 default profile $username] $username]</td><td>[GetLevel $level]</td><td>[timeDiff [expr {[unixtime] -$lastaction}]] ago</td><td>$class</td><td>$exp</td><td>$status</td></tr>"
+	}
+	append playersList "</table></div>"
+	
+	set totalPages [expr {ceil(double($totalPlayers)/$perPage)}]
+	set currentPage [expr {ceil(double($offset)/$perPage)+1}]
+	set prevPage [expr {$currentPage-1}]  ; set nextPage [expr {$currentPage+1}] 
+	append playersList "<div style=\"text-align:center;\">Page: "
+	if {$prevPage>0} {
+		append playersList "<a href=\"./[newUrl players.ws3 default offset [expr {int($prevPage*$perPage-$perPage)}]]\">Previous</a> "
+	}
+	for {set i 1} {$i<=$totalPages} {incr i} {
+		if {$i == $currentPage} {
+			append playersList "<span>$i</span> " 
+		} else { 
+			append playersList "<a href=\"./[newUrl players.ws3 default offset [expr {$i*$perPage-$perPage}]]\">$i</a> "  
+		}
+	}
+
+	if {$nextPage<=$totalPages} {
+		append playersList "<a href=\"./[newUrl players.ws3 default offset [expr {int($nextPage*$perPage-$perPage)}]]\">Next</a>"
+	}
+	
+	append playersList  "</div>"
+	page "Players and Friends" "" "" {
+		web::put $playersList
+	}
+}
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+	 
+} on error {bigError} { web::put "Some errors occured: $bigError"}
+
+
+
+
+

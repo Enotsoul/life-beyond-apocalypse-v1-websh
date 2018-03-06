@@ -1,0 +1,87 @@
+try {	
+web::include [file dirname [web::config script]]/gamesys/functions.ws3 msg
+#############
+#Functions
+#############
+proc DisplayProfile {} {
+
+}
+proc ShowProfile {username} {
+	array set AnotherPlayer [DatabaseFetchArray "select * from LostPlayers where username='$username'"] 
+	web::putx {
+		Level: <span class="bold">{web::put [GetLevel $AnotherPlayer(level)]}</span><br/>
+		Town: <span class="bold">{web::put $AnotherPlayer(town)}</span><br/>
+		Status: <span class="bold">{web::put $AnotherPlayer(status)}</span><br/>
+		Class: <span class="bold">{web::put $AnotherPlayer(class)}</span><br/>
+		Warn Level: <span class="bold">{web::put $AnotherPlayer(warnlvl)}</span><br/>
+		Clan: <span class="bold">{web::put $AnotherPlayer(clan)}</span><br/>
+		<h3>User Options (NOT FUNCTIONAL)</h3>
+		{web::put [newLink [newUrl communication.ws3 New toOther $AnotherPlayer(username)] "Send Message"]}<br/>
+		Add As Friend<br/>
+	}
+	if {[VerifyLevel 4]} {
+		web::putx {
+			<h3>Admin Functions</h3>
+			{web::put [newLink [newUrl admin.ws3 playerInfo player $AnotherPlayer(username)] "View Full Info"]}<br/>
+			{web::put [newLink [newUrl admin.ws3 goToPlayer player $AnotherPlayer(username)] "Go to Player"]}<br/>
+			{web::put [newLink [newUrl admin.ws3 giveItems player $AnotherPlayer(username)] "Give Items"]}<br/>
+			{web::put [newLink [newUrl admin.ws3 banUsername player $AnotherPlayer(username)] "Ban"]}<br/>
+		}
+	}
+}
+#############
+#Dispatching commands
+#############
+web::command default {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		set username [web::param profile]
+		if {$username != ""} {
+			page "Profile page of $username" ""  { 
+				web::putx "Displaying <span class=\"bold\">$username's</span> profile<br/>"			
+				ShowProfile $username
+			} 
+		} else {
+			array set LostPlayer [GlobalVar::carray get LostPlayer]
+			page "Profile page of $LostPlayer(username)" ""  { 
+			web::put {<div class="misc">}
+			web::put "<span class=\"bold\">$LostPlayer(username)</span><br/>"
+			if {$LostPlayer(health)>[expr {$LostPlayer(maxhealth)*0.8}]} {
+				set hpStyle "lightgreen"
+			} elseif {$LostPlayer(health)>[expr {$LostPlayer(maxhealth)*0.5}]} {
+				set hpStyle "yellow"
+			} elseif {$LostPlayer(health)>[expr {$LostPlayer(maxhealth)*0.3}]} {
+				set hpStyle "orange"
+			} else {
+				set hpStyle "IndianRed" ; #red
+			}
+			web::putx {<div>Energy: <span class="bold">{web::put $LostPlayer(energy)</span>/$LostPlayer(maxenergy)} <br/> Health: {web::put "<span style=\"color:$hpStyle\" class=\"bold\">$LostPlayer(health)</span>/$LostPlayer(maxhealth)"} <br/>Experience: <span class="bold">{web::put "$LostPlayer(exp)</span> <br/>Total Experience: $LostPlayer(maxxp)"} <br/>Encumbrance: {web::put "$LostPlayer(encumbrance)%"} <br/> }
+			web::putx {Level: <span class="bold">{web::put [GetLevel $LostPlayer(level)]}</span><br/> Warn Level: <span class="bold">{web::put $LostPlayer(warnlvl)}</span><br/> Clan: <span class="bold">{web::put $LostPlayer(clan)}</span><br/> Food Level: <span class="bold">{web::put $LostPlayer(foodlvl)}</span><br/> Water Level: <span class="bold">{web::put $LostPlayer(waterlvl)}</span>  }
+			if {$LostPlayer(energy) <= [expr $LostPlayer(maxenergy)*0.1]} { addLabel warning "Only $LostPlayer(energy) energy left!" }
+			web::put {</div></div>}
+
+			}
+		}
+		SaveSession
+	}
+}
+web::command ajaxVersion {
+	if {![IsAuthenticated]} {
+		RedirectAuth
+	} else  {   
+		set username [web::param profile]
+		if {$username != ""} {
+			ShowProfile $username
+		}
+		SaveSession
+	}
+}
+
+#############
+#Include footer & end
+#############
+web::include [file dirname [web::config script]]/gamesys/footer.ws3 msg
+	 
+} on error {bigError} { web::put "Some errors occured: $bigError"}
+

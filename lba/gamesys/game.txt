@@ -1,0 +1,162 @@
+
+LifeAfterApocalypse (c) LostOne 2009
+
+Encumbrance = Weight/Load
+After the apocalypse has striken.. All buildings are fucked up... = ruined thus 55 damage
+
+NO MULTIPLE CHARACTERS, that means NO DONATIONS/TRANSFERS on the same IP, NO PROXY, and if users are made only for donations you WILL get banned.
+Pre-Alpha: Game is not yet playable/ Hard Coding period and mega debugging Versions: 0.1 ~ 1 EXPLOITING ALLOWED(must be told)
+Alpha: Game is a little bit playable/ debugging period and resets Versions: +/- 1~2 EXPLOITING ALLOWED(must be told)
+Beta: Game is fully playable but still contains bugs Versions 2~3	Exploiting = banned
+Operational: Fully playable (bugs may exist) Exploiting = BANNED
+
+300 clicks per day/IP... 5€ per char = no restriction
+
+Exp: every succeded thing done
+Health: 100		>80% light wounded, >60% wounded, 40% heavily wounded  20% dying
+		green	> light green		> yellow	> orange 	> red
+	Regeneration: +1HP/10min 75<	+1HP/20 Min 50<	+1HP/40 MIN 25< -1HP/60 >25
+	1 HP every 1/2 hour + When eating 
+Warn Level: 0/5 	5 = banned
+Energie: 200 Max => 10 energy/hour = 240 max/day  
+Encumbrance: 0% >50% uses 1.25x energy >80% uses 1.5x energy 
+Inventory: 0/10 backpack +10 items
+Hunger: 0-20 if hunger or thirst = 0 then you use +0.5 energy for anything you do if both= +1 for every action
+Thirst: 0-10
+-1 hunger & thirst for every 10 energy used
+
+Radiation level: contamination per energy used/action NO MATTER IF YOU ARE ZOMBIE OR NOT!
+1-5 Radiation level: 50% Chance 1-2 dmg per energy use/per hour
+6-10 Radiation level: 50-70% chance 2-3 dmg per energy use/per hour
+Radiation decreases on a daily basis with 1
+
+
+
+Clans: Top 7 in each "race" weekly 1 gets the chance to make a clan
+If a clan member outruns the clan leader untill sunday, he takes over
+If clan owner dies...  next one takes the rang, if he comes back.. he may chose
+
+
+Time
+1 day 	 6 hours
+Special days: 1 out of 7 chance
+
+Black sun day: sort of like an eclipse.. but worse! It's all day..: Darkness hase reached the earth.. the end is near
+Z-Day: Zombie day! Rememorate why we fight! Humans get 10% Accuracy on all hits!
+No begging day: Today you won't find anything while searching.. just keep trying:)
+Solar radiations day: Every outside spot is iradiated from 10-20 so better stay inside or go out less often.
+Shopping day: Today you get lucky... 25% extra chance to find items!
+Feasting day: Zombies just cannot bite survivors today. Survivors can't eat anything.
+Prayer day: Today your prayers will  be answered
+
+Levels:
+Banned			1
+User			2
+Premium			3
+Moderator		4
+Administrator	5
+Developper		6
+Owner			7
+
+Warning Level + Auto-Ban system: 5 levels, level 5  = ban+reset
+	Multiple IP's on same Character
+	Multiple Login's on Same IP
+	Transfering multiple chars from same IP
+	Cheating, exploiting... = direct ban
+
+TRADING WITH NPC
+
+NPC database items is what users trade & what he gets so it's not always available
+
+
+Zombies database & AI
+Zombies that are not real players but NPC that come out of nowhere and attack you on some spots... On the streets or inside..
+They attack when searching.. or entering building.. you can easily kill them..
+
+In the NewTurn in databasefunctions.ws3
+OR in the loading of a new page:)
+
+When the user waited too much in a place outside a building.. let a random zombie attack him:)
+OR when moving from a place to another..
+
+
+Zombie Speech
+string map -nocase {
+a 	ah
+b 	bf 
+c 	ch 
+d 	ds 
+e 	eh 
+f 	fih 
+g 	gh 
+h 	h
+i 	ei 
+j 	ji 
+k 	kh 
+l 	lm 
+m 	mn
+n 	nh
+o 	or 
+p 	pf 
+q 	qhr 
+r 	rr
+s 	sz 
+t 	tch
+u 	uv 
+v 	va 
+w 	wmn 
+x 	ics 
+y 	yrz
+z 	zs 
+0 zero
+1 unu
+2 doi
+3 trei
+4 patru
+5 cinci
+6 sase
+7 sapte
+8 opt
+9 noua
+} $sentence
+
+string map -nocase {
+ah	a 
+bf 	b 
+ch 	c 
+ds 	d 
+eh 	e 
+fih 	f 
+gh 	g 
+h	h 
+ei 	i 
+ji 	j 
+kh 	k 
+lm 	l 
+mn	m 
+nh	n 
+or 	o 
+pf 	p 
+qhr 	q 
+rr	r 
+sz 	s 
+tch	t 
+uv 	u 
+va 	v 
+wmn 	w 
+ics 	x 
+yrz	y 
+zs 	z 
+zero 0
+ unu 1
+ doi 2
+ trei 3
+ patru 4
+ cinci 5
+ sase 6
+ sapte 7
+ opt 8
+ noua 9
+} $zombiespeech
+
+A portable generator has been set up here. It is running, and powering a radio transmitter that's currently set to 28.01 MHz. 

@@ -1,0 +1,1416 @@
+﻿/* Basic Elements  ------------ */
+HTML
+{
+    border: none;
+}
+
+BODY
+{
+    font-family: Verdana;
+    font-size: 11px;
+    font-style: normal;
+    line-height: normal;
+    font-weight: normal;
+    letter-spacing: 1px;
+    color: #FFFFFF;
+    margin: 0px;
+}
+.sortMenu a img {
+	float:left;
+	margin: 0px;
+	padding: 0px;
+	border: none;
+}
+.sortMenu a {
+	margin: 0;
+	padding: 0;
+}
+
+.sortMenu {
+	height:25px;
+	clear:both;
+}
+
+
+
+H1
+{
+    font-family: Verdana;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: White;
+}
+
+H2
+{
+    font-family: Verdana;
+    font-size: 14px;
+    font-style: normal;
+    line-height: normal;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: White;
+}
+H3
+{
+    font-family: Verdana;
+    font-size: 13px;
+    font-style: normal;
+    line-height: normal;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: White;
+}
+H4
+{
+    font-family: Verdana;
+    font-size: 12px;
+    font-style: normal;
+    line-height: normal;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: White;
+}
+H5
+{
+    font-family: Verdana;
+    font-size: 11px;
+    font-style: normal;
+    line-height: normal;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: White;
+}
+TD
+{
+    /*font-family: Georgia, "Times New Roman", Times, serif;*/
+    font-size: 11px;
+    font-family: Verdana;
+    font-style: normal;
+    line-height: normal;
+    letter-spacing: 1px;
+    color: #FFFFFF; /*padding: 4px;*/
+}
+TABLE
+{
+    padding: 0;
+}
+/* Form Elements  ------------ */
+form
+{
+    margin: 0px;
+    padding: 0px;
+    border: 0px;
+}
+/*#foo select { background:#FF6600; font-weight:bold; color:#FFF; border:solid 1px #333333; }*/
+
+/*textarea, select, .post, .btnbbcode, .btnmain, .btnlite, .btnfile, .helpline {*/
+input, textarea, option, select, .buttonstyle1
+{
+    font-weight: normal;
+    font-family: "Lucida Grande" , Verdana, Helvetica, sans-serif;
+    color: #D0D0D0;
+    border: 1px solid #B62723;
+    background-color: #222;
+}
+
+.buttonstyle2
+{
+    font-weight: normal;
+    font-family: "Lucida Grande" , Verdana, Helvetica, sans-serif;
+    color: #D0D0D0;
+    border: 1px solid #B62723;
+}
+
+.disclaimertext
+{
+    font-family: Verdana;
+    font-size: 8px;
+    font-style: italic;
+    line-height: normal;
+    font-weight: normal;
+    letter-spacing: 1px;
+    color: #FFFFFF;
+}
+
+.highlightText
+{
+    color: #FFC125;
+}
+
+.highlightTextDiscrete
+{
+    color: #FFF293;
+}
+
+#messageBody .highlightText
+{
+    color: #7C0F00;
+}
+
+.premiumAdvList
+{
+    margin-bottom: 8px;
+}
+
+.buttonstyle2
+{
+    font-weight: bold;
+    cursor: pointer;
+    padding: 1px 5px;
+    font-size: 1.1em;
+}
+
+
+.masterbgbeta
+{
+    background-color: #000000;
+}
+
+/* links ------------ */
+
+A:link
+{
+    color: Red;
+    text-decoration: underline;
+}
+A:visited
+{
+    color: Red;
+    text-decoration: underline;
+}
+A:active
+{
+    color: Red;
+    text-decoration: none;
+}
+A:hover
+{
+    color: #990000;
+    text-decoration: underline;
+}
+.facebookLogin A:hover
+{
+    text-decoration: none;
+}
+
+.HyperlinkSpan
+{
+    color: Red;
+    text-decoration: underline;
+    cursor: pointer;
+}
+.White
+{
+    color: White;
+}
+
+.ItemLink
+{
+    cursor: pointer;
+}
+
+.IconButton
+{
+    height: 24px;
+}
+
+.CollapseExpandButton
+{
+    height: 15px;
+    float: right;
+}
+.ItemLinkHover
+{
+    border: 1px solid Red;
+}
+
+.XPText
+{
+    color: Yellow;
+}
+
+.SPText
+{
+    color: #6666FF;
+}
+
+.HPLostText
+{
+    color: Red;
+}
+
+.HPGainedText
+{
+    color: Green;
+}
+
+
+.InputForm
+{
+    background: #313131 url(Images/GUI20/tables/form_bg_color.gif) repeat;
+}
+.thStyleDefault a {
+	font-weight: normal;
+	font-size:11px;
+	background-image: none !important;
+}
+
+
+
+/* tables ------------ */
+
+.tablebg
+{
+   
+   
+}
+
+.tablebgselected
+{
+    border: solid 1px #000;
+    background: #A2A2A2 url(/Images/Skin/cell_bg_bright.gif) top left repeat-x;
+}
+
+.leftmenu
+{
+    border: solid 0px #000;
+    padding: 0px;
+    border-left: solid 0px #404040;
+    border-right: solid 0px #121212;
+    border-top: solid 0px #3C3C3C;
+    border-bottom: solid 0px #131313;
+    background-color: #313131;
+}
+
+.textmenu
+{
+    font-family: Georgia, "Times New Roman" , Times, serif;
+    font-size: 9pt;
+    font-style: normal;
+    line-height: normal;
+    font-weight: normal;
+    letter-spacing: 1px;
+    color: #FFFFFF;
+}
+
+
+.tablebaggrund
+{
+    background: url(/Images/Skin/table_bg.gif) top left repeat-y;
+    border-left: solid 1px ##000000;
+    border-right: solid 1px ##000000;
+    border-top: solid 1px ##000000;
+    border-bottom: solid 1px ##000000;
+}
+
+.thLargeLinks
+{
+    background: #C63F3B url(/Images/Skin/skin_headerbar2.jpg) top left repeat-x;
+    height: 25px; /*overflow: hidden;*/
+    border-bottom: solid 1px #000;
+    border-top: solid 1px #000;
+    color: #ffffff;
+    text-align: center;
+    font-size: 12px;
+    padding: 0px;
+    font-weight: bold;
+}
+.tAlignLeft {
+	text-align: left !important;
+}
+
+
+.thStyleSmall
+{
+    background: #C63F3B url(/Images/Skin/skin_headerbar2.jpg) top left repeat-x;
+    height: 25px; /*overflow: hidden;*/
+    border-bottom: solid 1px ##000000;
+    border-top: solid 1px ##000000;
+    color: #ffffff;
+    text-align: center;
+    font-size: 11px;
+    padding: 0px;
+    font-weight: bold;
+}
+
+.thStyleLarge
+{
+    background: #C63F3B url(/Images/Skin/skin_headerbar2.jpg) top left repeat-x;
+    height: 25px; /*overflow: hidden;*/
+    border-bottom: solid 1px ##000000;
+    border-top: solid 1px ##000000;
+    color: #ffffff;
+    text-align: center;
+    font-size: 13px;
+    padding: 0px;
+    font-weight: bold;
+}
+
+.thStyleDefault
+{
+	height: 17px;
+	color: #ffffff;
+	text-align: center;
+	padding: 2px;
+	font-weight: normal;
+	text-transform: uppercase;
+}
+
+.SystemInfo
+{
+    background: #C63F3B url(/Images/Skin/skin_headerbar3_heigh.jpg) top left repeat-x;
+    height: 17px; /*overflow: hidden;*/
+    border-bottom: solid 1px ##000000;
+    border-top: solid 1px ##000000;
+    color: #ffffff;
+    text-align: center;
+    font-size: 12px;
+    padding: 2px;
+    font-weight: bold;
+}
+.thStyleHigh
+{
+    background: #C63F3B url(/Images/Skin/skin_headerbar2_heigh.jpg) top left repeat-x;
+    height: 30px; /*overflow: hidden;*/
+    border-bottom: solid 1px ##000000;
+    border-top: solid 1px ##000000;
+    color: #ffffff;
+    text-align: center;
+    font-size: 12px;
+    padding: 2px;
+    font-weight: bold;
+}
+
+.thStyleDouble
+{
+    background: #C63F3B url(/Images/Skin/skin_headerbar2_heigh.jpg) top left repeat-x;
+    height: 34px; /*overflow: hidden;*/
+    border-bottom: solid 1px ##000000;
+    border-top: solid 1px ##000000;
+    color: #ffffff;
+    text-align: center;
+    font-size: 12px;
+    padding: 2px;
+    font-weight: bold;
+}
+
+.labellink
+{
+    color: Red;
+    text-decoration: underline;
+}
+
+.cellStyleRed
+{
+    border-left: solid 1px #404040;
+    border-right: solid 1px #121212;
+    border-top: solid 1px #3C3C3C;
+    border-bottom: solid 1px #131313;
+    background: #702727 url(/Images/Skin/cell_bg_red.gif) top left repeat-x;
+    padding: 4px;
+}
+
+.cellStyleBright
+{
+	padding: 4px;
+	background-image: url(/Images/GUI20/tables/rowHighlightedBg.png);
+}
+
+.cellStyleBrightCentered
+{
+    padding: 4px;
+	background-image: url(/Images/GUI20/tables/rowHighlightedBg.png);
+    text-align: center;
+}
+
+.cellStyleRedCentered
+{
+    border-left: solid 1px #404040;
+    border-right: solid 1px #121212;
+    border-top: solid 1px #3C3C3C;
+    border-bottom: solid 1px #131313;
+    background: #702727 url(/Images/Skin/cell_bg_red.gif) top left repeat-x;
+    padding: 4px;
+    text-align: center;
+}
+
+.cellStyleDefault
+{
+	padding: 5px;
+	background-image:url(/Images/GUI20/tables/rowBg.png);
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: #313131;
+}
+
+.cellStyleCentered
+{
+	text-align: center;
+	padding: 5px;
+	background-image:url(/Images/GUI20/tables/rowBg.png);
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: #313131;
+}
+
+.contentBlackBgTrans
+{
+    border-left: solid 1px #404040;
+    border-right: solid 1px #121212;
+    border-top: solid 1px #3C3C3C;
+    border-bottom: solid 1px #131313;
+    background: #313131 url(/Images/GUI20/tables/table_cell_bg.png) repeat;
+    padding: 5px;
+}
+.cellStyleBorder
+{
+    border-left: solid 1px #404040;
+    border-right: solid 1px #121212;
+    border-top: solid 1px #3C3C3C;
+    border-bottom: solid 1px #131313; /*background: #313131 url(/Images/Skin/cell_bg.gif) top left repeat-x;*/
+    padding: 0px;
+}
+
+.cellStyleHighlighted
+{
+    color: Red;
+}
+
+.thStyleBG1
+{
+    background: #C63F3B url(/Images/Skin/skin_headerbar3_heigh.jpg) top left repeat-x;
+    height: 17px; /*overflow: hidden;*/
+    border-bottom: solid 1px ##000000;
+    border-top: solid 1px ##000000;
+    color: #ffffff;
+    text-align: center;
+    font-size: 12px;
+    padding: 2px;
+    font-weight: bold;
+}
+.thStyleBG2
+{
+    background: #C63F3B url(/Images/Skin/skin_headerbar4_heigh.jpg) top left repeat-x;
+    height: 17px; /*overflow: hidden;*/
+    border-bottom: solid 1px ##000000;
+    border-top: solid 1px ##000000;
+    color: #ffffff;
+    text-align: center;
+    font-size: 12px;
+    padding: 2px;
+    font-weight: bold;
+}
+.thStyleBG3
+{
+    background: #C63F3B url(/Images/Skin/skin_headerbar5_heigh.jpg) top left repeat-x;
+    height: 17px; /*overflow: hidden;*/
+    border-bottom: solid 1px ##000000;
+    border-top: solid 1px ##000000;
+    color: #ffffff;
+    text-align: center;
+    font-size: 12px;
+    padding: 2px;
+    font-weight: bold;
+}
+
+.redHighlightText
+{
+    color: Red;
+    text-decoration: underline;
+}
+
+
+.thDefaultLinksWhite
+{
+	height: 17px; /*overflow: hidden;*/
+	border-bottom: solid 1px ##000000;
+	border-top: solid 1px ##000000;
+	color: #ffffff;
+	text-align: center;
+	font-size: 12px;
+	padding: 2px;
+	font-weight: bold;
+}
+
+a.thDefaultLinksWhite:link
+{
+    color: white;
+    text-decoration: underline;
+}
+a.thDefaultLinksWhite:visited
+{
+    color: white;
+    text-decoration: underline;
+}
+a.thDefaultLinksWhite:active
+{
+    color: white;
+    text-decoration: none;
+}
+a.thDefaultLinksWhite:hover
+{
+    color: #959595;
+    text-decoration: underline;
+}
+
+.ppHeader{
+	background-image: url(/Images/GUI20/tables/generalHeaderBar.jpg);
+	height: 22px;
+	width: 684px;
+	padding-bottom: 3px;
+}
+
+.thLargeLinksWhite
+{
+    /*	background: #C63F3B url(/Images/Skin/skin_headerbar2.jpg) top left repeat-x;  	height: 25px; 	border-bottom: solid 1px #000; 	border-top: solid 1px #000; 	color: #ffffff; 	text-align: center; 	font-size: 12px; 	padding: 0px; 	font-weight: bold;*/
+}
+
+.AspNetLoginStatus
+{
+    display: none;
+    visibility: collapse;
+    float: right;
+    width: 0px;
+}
+
+a.thLargeLinksWhite:link
+{
+    color: white;
+    text-decoration: underline;
+}
+a.thLargeLinksWhite:visited
+{
+    color: white;
+    text-decoration: underline;
+}
+a.thLargeLinksWhite:active
+{
+    color: white;
+    text-decoration: none;
+}
+a.thLargeLinksWhite:hover
+{
+    color: #959595;
+    text-decoration: underline;
+}
+
+
+/* other ------------ */
+
+.imagebutton
+{
+    margin: 0px 0px 0px 0px;
+    padding: 0px 0px 0px 0px; /*float: left;*/
+    border: none;
+}
+
+.rtl option
+{
+    padding: 0 0 0 1em;
+}
+
+.transBackground
+{
+    background-color: black;
+    filter: alpha(opacity=63);
+}
+
+.transBG2
+{
+    background-color: black;
+    filter: alpha(opacity=80);
+    opacity: .80;
+    -moz-opacity: 0.80;
+}
+
+.TestBorder
+{
+    border: 1px solid green;
+}
+
+.transBG3
+{
+    background-color: black;
+    filter: alpha(opacity=63);
+    opacity: .63;
+    -moz-opacity: 0.63;
+    text-align: center;
+    font-family: Verdana;
+    font-size: 10px;
+    font-style: normal;
+    line-height: normal;
+    font-weight: normal;
+    letter-spacing: 1px;
+    color: #FFFFFF;
+}
+
+
+
+.blackbg
+{
+    background-color: black;
+}
+
+.bordercontrol
+{
+    border-style: solid;
+    border-width: 1px;
+}
+
+.ProgressBar
+{
+    background-color: Blue;
+    height: 5px;
+}
+.styleTableNoBorder
+{
+    margin: 0px;
+    padding: 0px;
+    border-collapse: collapse;
+}
+
+.styleCenteredContent
+{
+    text-align: center;
+}
+
+.styleVerticalTop
+{
+    vertical-align: top;
+}
+
+.styleTableMaxWidth
+{
+    width: 100%;
+}
+
+.styleTableMaxWidthAnd300px
+{
+    width: 100%;
+    height: 300px;
+}
+
+.styleCharSheetColumn1
+{
+    width: 150px;
+    border: thin solid Black;
+    color: #010101;
+    padding: 0px;
+    margin: 0px;
+}
+
+.styleCharSheetColumn2
+{
+    width: 100px;
+    border: thin solid Black;
+    color: #010101;
+    padding: 0px;
+    margin: 0px;
+}
+
+.styleCharSheetColumn3
+{
+    width: 30px;
+    border: thin solid Black;
+    color: #010101;
+    padding: 0px;
+    margin: 0px;
+    text-align: right;
+}
+.collapsePanel
+{
+    width: 640px;
+    height: 0px;
+    background-color: white;
+    overflow: hidden;
+}
+
+.collapsePanelHeader
+{
+    width: 640px;
+    height: 20px;
+    color: Yellow;
+    background-color: Black;
+    font-weight: bold;
+    float: none;
+    padding: 5px;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.InvisibleButton
+{
+    visibility: hidden;
+}
+
+.LocationCharNames
+{
+    display: inline;
+    float: left;
+}
+
+.modalBackground /*Used For Modal popups to grey out the background*/
+{
+    background-color: #000;
+    filter: alpha(opacity=80);
+    opacity: 0.8;
+}
+
+
+
+/*New Map stuff*/
+
+.MapImage
+{
+    width: 690px;
+    height: 488px;
+}
+.InvisibleMapLayer
+{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 690px;
+    height: 488px;
+    background-color: Black; /*If there is no background Explorer7 will not fire the mousemove event. Only on the border*/
+    filter: alpha(opacity=0);
+    opacity: 0;
+    -moz-opacity: 0;
+}
+.MapContainer
+{
+    position: relative;
+    width: 690px;
+    height: 488px;
+    z-index: 1;
+}
+.MapMarker
+{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 10px;
+    height: 10px;
+    border: 1px solid white;
+    visibility: hidden;
+}
+.MapInfo
+{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    border: 1px solid white;
+    visibility: hidden;
+}
+.LocationMarker
+{
+    position: absolute;
+    background-color: Green;
+    border: 1px solid white;
+    left: 0px;
+    top: 0px;
+    width: 10px;
+    height: 10px;
+    filter: alpha(opacity=50);
+    opacity: 0.5;
+    -moz-opacity: 0.5;
+}
+
+.InfectionMapMarker
+{
+    position: absolute;
+    background-color: Red;
+    left: 0px;
+    top: 0px;
+    width: 10px;
+    height: 10px;
+}
+
+#tooltip
+{
+    position: absolute;
+    z-index: 3000;
+    font-size: 1.0em;
+    border: 1px solid Red;
+    background-color: Black;
+    padding: 5px;
+}
+#tooltip h3, #tooltip div
+{
+    margin: 0;
+    font-size: 1.0em;
+}
+
+.namedImageItem
+{
+    white-space: nowrap;
+    border: solid 2px #666666;
+    margin: 5px;
+    border-color: yellow;
+    color: white;
+    background-color: black;
+    height: 330px;
+    width: 450px;
+    overflow: hidden;
+    margin-top: 25px;
+    text-align: center;
+}
+.namedImageItem img
+{
+    height: 250px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+.namedImageItem div
+{
+    color: white;
+    background-color: black;
+    border: none;
+    width: 450px;
+    margin-left: auto;
+    margin-right: auto;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.namedListItem
+{
+    float: left;
+    border: solid 2px #666666;
+    display: inline-block;
+    margin: 4px;
+    color: #cccccc;
+    height: 155px;
+    width: 150px;
+    background-color: #333333;
+    overflow: hidden;
+    text-align: center;
+}
+.namedListItem input[type=text]
+{
+    color: black;
+    background-color: #ddd;
+    border-color: #777777;
+    border-bottom-style: solid;
+    border-right-style: solid;
+    padding: 3px;
+    width: 150;
+}
+.namedListItem div.namedListItemStandard
+{
+    color: #cccccc;
+    border: none;
+    margin-top: 5px;
+    margin-left: auto;
+    margin-right: auto;
+    font-weight: bold;
+    height: 27px;
+}
+.namedListItem img
+{
+    height: 87px;
+    width: auto;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+.noScrollbars
+{
+    overflow: hidden;
+}
+
+.infoTabTextBox
+{
+    display: inline;
+    float: left;
+    margin-top: 4px;
+}
+.charListItem
+{
+    background-color: #121212;
+    float: left;
+    margin: 2px;
+    white-space: nowrap;
+}
+
+.charElement
+{
+    background-color: #404040;
+    margin: 1px;
+    padding: 1px;
+    float: left;
+    height: 14px;
+    color: Red;
+    white-space: nowrap;
+}
+
+.charIcon
+{
+    width: 14px;
+    height: 14px;
+    margin-right: 0px;
+    background-position: 0px 0px;
+    background-repeat: no-repeat;
+    background-image: url(Images/Icons/Star16x16.gif);
+}
+
+.healIcon
+{
+    width: 14px;
+    height: 14px;
+    margin-right: 0px;
+    background-position: 0px 0px;
+    background-repeat: no-repeat;
+    background-image: url(Images/Icons/redcross_3.png);
+    cursor: pointer;
+}
+
+.clanLink
+{
+    color: #DDDDDD;
+    margin-right: 0px;
+    cursor: pointer;
+}
+
+
+.charLink
+{
+    color: Red;
+    cursor: pointer;
+}
+
+.PollingServer
+{
+    color: Red;
+}
+
+
+​ .LoginMainDiv
+{
+    margin-top: 10px;
+}
+
+.LoginMainDiv input[type=text], input[type=password]
+{
+    width: 100%;
+}
+
+.loginDivLeft
+{
+    width: 30%;
+    float: left;
+    margin-bottom: 3px;
+}
+
+.loginDivRight
+{
+    width: 70%;
+    float: left;
+    margin-bottom: 3px;
+}
+
+.loginDivBottom
+{
+    text-align: center;
+}
+
+.TutorialBox
+{
+    position: absolute;
+    text-align:left;
+    top: 0px;
+    left: 0px;
+    display: none;
+    z-index: 1015;
+}
+
+#TutorialStepContent
+{
+    width: 405px; 
+    height: 250px; 
+}
+
+.TutorialTextDiv
+{
+    position: absolute; 
+    width: 300px; 
+    height: 70px; 
+    top: 110px; 
+    left: 90px;
+    color: #000000;
+}
+
+.TutorialArrow
+{
+    position: absolute; 
+    top: 0px; 
+    left: 181px;
+}
+
+.TutorialArrow.South
+{
+    top: 190px; 
+}
+
+.TutorialArrow.East
+{
+    top: 105px;
+    left: 390px;
+}
+
+.TutorialCloseButton
+{
+    position: absolute; 
+    top: 80px;
+    left: 390px;
+    cursor: pointer;
+}
+
+.TutorialNextButton
+{
+    position: absolute; 
+    top: 185px;
+    left: 390px;
+    cursor: pointer;
+}
+
+.TutorialLayer
+{
+    position: absolute;
+    height: 100px;
+    width: 100px;
+    top: 0px;
+    left: 0px;
+    background-color: Black;
+    filter: alpha(opacity=50);
+    opacity: .50;
+    -moz-opacity: 0.50;
+    z-index: 1010;
+    display: none;
+}
+
+.MoveButton
+{
+    background-color: transparent;
+    z-index: 1000;
+}
+
+.SubLocButton
+{
+    height: 25px;
+}
+
+.Clickable
+{
+    cursor: pointer;
+}
+
+.journalHeaderBgFirst {
+	background-image: url(/Images/GUI20/tables/journalHeaderBgFirst.png);
+	height: 13px;
+	width: 10px;
+	float: left;
+}
+.journalHintBgFirst {
+	background-image: url(/Images/GUI20/tables/journalHintBgFirst.png);
+	height: 13px;
+	width: 10px;
+	float: left;
+}
+.journalHintHeader {
+	background-image: url(/Images/GUI20/tables/rowBg.png);
+	float: left;
+	padding-right: 10px;
+	padding-left: 10px;
+}
+.journalHintBgLast {
+	background-image: url(/Images/GUI20/tables/journalHintBgLast.png);
+	float: left;
+	height: 13px;
+	width: 10px;
+}
+.journalInfo {
+	vertical-align: top;
+	width: 100px;
+}
+
+
+.journalHintContent {
+	background-image: url(/Images/GUI20/tables/rowBg.png);
+	clear: both;
+	padding-right: 10px;
+	padding-left: 10px;
+	padding-top: 10px;
+	float: left;
+}
+
+
+
+.journalHeaderBgLast {
+	background-image: url(/Images/GUI20/tables/journalHeaderBgLast.png);
+	height: 13px;
+	width: 10px;
+	float: left;
+	page-break-after: always;
+}
+.journalEntryContentTop {
+	background-image: url(/Images/GUI20/tables/journalEntryBgFirst.png);
+	height: 8px;
+	width: 553px;
+	clear: both;
+	margin-bottom: 0px;
+}
+.journalEntryContent {
+	background-image: url(/Images/GUI20/tables/journalInfoBg.png);
+	margin: 0px;
+	width: 543px;
+	float: left;
+	padding-right: 5px;
+	padding-left: 5px;
+}
+.journalEntryContentBottom {
+	background-image: url(/Images/GUI20/tables/journalEntryBgLast.png);
+	height: 8px;
+	width: 553px;
+	clear: both;
+	padding-bottom: 20px;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: #999;
+	background-repeat: no-repeat;
+}
+.journalInfoCell {
+	background-image: url(/Images/GUI20/tables/journalTimeBg.png);
+	height: 65px;
+	width: 80px;
+	padding: 10px;
+	font-size: 11px;
+	font-family: Tahoma;
+	margin-top: 13px;
+}
+.journalHintBottom {
+	background-image: url(/Images/GUI20/tables/journalHintBottom.png);
+	height: 6px;
+	width: 676px;
+	clear: both;
+	float: left;
+}
+.journalHintTop {
+	background-image: url(/Images/GUI20/tables/journalHintTop.png);
+	height: 6px;
+	width: 676px;
+	float: left;
+}
+
+
+.pageInfoTop {
+	background-image: url(/Images/GUI20/tables/journalInfoTop.png);
+	height: 9px;
+	width: 677px;
+	float: left;
+}
+.pageInfoContent {
+	background-image: url(/Images/GUI20/tables/rowBg.png);
+	float: left;
+}
+.pageInfoBottom {
+	background-image: url(/Images/GUI20/tables/journalInfoBottom.png);
+	clear: both;
+	height: 9px;
+	width: 677px;
+}
+
+.entryHeader {
+	float: left;
+	background-image: url(/Images/GUI20/tables/journalInfoBg.png);
+	height: 13px;
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+img.rotate90
+{
+    -moz-transform: rotate(90deg);
+    -o-transform: rotate(90deg);
+    -webkit-transform: rotate(90deg);
+    -ms-transform: rotate(90deg);
+    transform: rotate(90deg);
+    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1);
+    -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=1)";
+    zoom: 1;
+}
+
+img.rotate180
+{
+    -moz-transform: rotate(180deg);
+    -o-transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    transform: rotate(180deg);
+    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=2);
+    -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=2)";
+    zoom: 1;
+}
+
+img.rotate270
+{
+    -moz-transform: rotate(270deg);
+    -o-transform: rotate(270deg);
+    -webkit-transform: rotate(270deg);
+    -ms-transform: rotate(270deg);
+    transform: rotate(270deg);
+    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+    -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=3)";
+    zoom: 1;
+}
+
+img.rotate90-flip
+{
+    -moz-transform: rotate(90deg) scaleY(-1);
+    -o-transform: rotate(90deg) scaleY(-1);
+    -webkit-transform: rotate(90deg) scaleY(-1);
+    -ms-transform: rotate(90deg);
+    transform: rotate(90deg) scaleY(-1);
+    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1) flipv;
+    -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=1) flipv";
+    zoom: 1;
+}
+
+img.rotate180-flip
+{
+    -moz-transform: rotate(180deg) scaleX(-1);
+    -o-transform: rotate(180deg) scaleX(-1);
+    -webkit-transform: rotate(180deg) scaleX(-1);
+    -ms-transform: rotate(180deg);
+    transform: rotate(180deg) scaleX(-1);
+    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=2) fliph;
+    -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=2) fliph";
+    zoom: 1;
+}
+
+img.rotate270-flip
+{
+    -moz-transform: rotate(270deg) scaleY(-1);
+    -o-transform: rotate(270deg) scaleY(-1);
+    -webkit-transform: rotate(270deg) scaleY(-1);
+    -ms-transform: rotate(270deg);
+    transform: rotate(270deg) scaleY(-1);
+    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3) flipv;
+    -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=3) flipv";
+    zoom: 1;
+}
+
+.-flip {
+    -moz-transform: scaleX(-1);
+    -webkit-transform: scaleX(-1);
+    -o-transform: scaleX(-1);
+    transform: scaleX(-1);
+    filter: fliph; /*IE*/
+}
+
+.flipV {
+    -moz-transform: scaleY(-1);
+    -webkit-transform: scaleY(-1);
+    -o-transform: scaleY(-1);
+    transform: scaleY(-1);
+    filter: flipv; /*IE*/
+}
+
+
+/******************Combat styles**********************/
+
+.hidden
+{
+    visibility: hidden;
+}
+    
+.container
+{
+    background-color: #000;
+    width: 500px;
+    margin: 0 auto;
+    color: #FFF;
+    overflow: hidden;
+}
+    
+.missed
+{
+    color: #999;
+}
+
+.WinLooseTextImage
+{
+    position: absolute;
+    top: 0px;
+    left: 45px;   
+}
+
+.TargetOuterDiv
+    {
+        float: left;
+        border: 2px solid black;
+        margin: 2px;
+        cursor: pointer;
+    }
+    
+    .EnemyImage
+    {
+        border: 1px solid black;
+        margin: 2px;
+        float: left;
+        height: 65px;
+        background-color: #303030;
+    }
+    
+    .EnemyKilledTextImage
+    {
+        position: absolute;
+        margin: 2px;
+        height: 65px;
+        width: 49px;
+        top: 0px;
+        left: 0px;
+    }
+    
+    .EnemyStats
+    {
+        font: Verdana;
+        font-size: 11px;
+        background-color: #303030;
+        color: white;
+        float: left;
+        margin: 2px 2px 2px 0px;
+        border: 1px solid black;
+        height: 65px;
+        width: auto;
+    }
+    
+    .Targeted
+    {
+        border-color: #730017 !important;
+        background-color: #9E1833 !important;
+    }
+    
+    .InRange
+    {
+        border-color: #003300;
+        background-color: #006600;
+    }
+    
+    .OutOfRange
+    {
+        background-color: Gray;
+    }
+    
+    .Dead
+    {
+        border-color: Black;
+        background-color: Black;
+    }
+
+/******************Combat styles END******************/
